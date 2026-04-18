@@ -132,7 +132,7 @@ export default function Sidebar({
 
   if (viewport === "desktop") {
     return (
-      <aside className="border-r border-(--border-color) bg-(--bg-sidebar) md:fixed md:inset-y-0 md:left-0 md:z-30 md:block md:w-62.5 md:overflow-hidden">
+      <aside className="hidden border-r border-(--border-color) bg-(--bg-sidebar) md:block md:h-full md:w-full md:overflow-hidden">
         <div className="flex h-full flex-col px-5 py-6">
           {brand}
           {navItems}

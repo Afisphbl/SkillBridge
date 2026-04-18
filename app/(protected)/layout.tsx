@@ -23,12 +23,12 @@ export default function ProtectedLayout({
 
   return (
     <ProtectedRoute>
-      <div className="h-screen overflow-hidden bg-(--bg-primary)">
+      <div className="h-screen overflow-hidden bg-(--bg-primary) md:grid md:grid-cols-[250px_minmax(0,1fr)]">
         <SidebarComponent
           mobileOpen={mobileSidebarOpen}
           onClose={() => setMobileSidebarOpen(false)}
         />
-        <div className="protected-content-shell flex h-full min-w-0 flex-col">
+        <div className="flex h-full min-w-0 flex-col">
           <NavbarComponent
             onMenuToggle={() => setMobileSidebarOpen((open) => !open)}
           />

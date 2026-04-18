@@ -99,9 +99,3 @@ button {
 .modal-pop {
   animation: modal-pop 180ms ease-out both;
 }
-
-@media (min-width: 768px) {
-  .protected-content-shell {
-    padding-left: 250px;
-  }
-}

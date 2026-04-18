@@ -116,12 +116,24 @@ export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
         {tinyMenuOpen ? (
           <div className="absolute right-4 top-14 z-40 w-44 rounded-lg border border-(--border-color) bg-(--bg-card) p-2 shadow-lg min-[400px]:hidden">
             <Link
+              href="/settings"
+              onClick={() => setTinyMenuOpen(false)}
+              aria-label="Settings"
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-(--text-secondary) hover:bg-(--hover-bg)"
+            >
+              <FiUser className="size-4 text-(--color-primary)" />
+              <span>Settings</span>
+            </Link>
+            <Link
               href="/profile"
+              onClick={() => setTinyMenuOpen(false)}
+              aria-label="Profile"
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-(--text-secondary) hover:bg-(--hover-bg)"
             >
               <FiUser className="size-4 text-(--color-primary)" />
               <span>Profile</span>
             </Link>
+
             <button
               type="button"
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-(--text-secondary) hover:bg-(--hover-bg)"
@@ -136,6 +148,7 @@ export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
             </button>
             <button
               type="button"
+              aria-label="Log out"
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-(--color-danger) hover:bg-(--badge-danger-bg) disabled:opacity-50"
               onClick={handleSignOut}
               disabled={submitting}
