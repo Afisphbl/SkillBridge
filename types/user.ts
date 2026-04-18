@@ -6,4 +6,5 @@ export type UserProfile = {
   full_name: string;
   role: UserRole;
   avatar?: string;
+  bio?: string | null;
 };

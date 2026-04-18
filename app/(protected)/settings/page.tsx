@@ -1,3 +1,9 @@
+export const metadata = {
+  title: "Settings",
+  description:
+    "Manage your account settings, including profile details, password, and preferences.",
+};
+
 export default function SettingsPage() {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

@@ -1,3 +1,8 @@
+export const metadata = {
+  title: "Orders",
+  description: "Monitor incoming and completed project orders on SkillBridge.",
+};
+
 export default function OrdersPage() {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

@@ -23,16 +23,18 @@ export default function ProtectedLayout({
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-(--bg-primary) md:grid md:grid-cols-[250px_minmax(0,1fr)]">
+      <div className="h-screen overflow-hidden bg-(--bg-primary)">
         <SidebarComponent
           mobileOpen={mobileSidebarOpen}
           onClose={() => setMobileSidebarOpen(false)}
         />
-        <div className="flex min-w-0 flex-col">
+        <div className="protected-content-shell flex h-full min-w-0 flex-col">
           <NavbarComponent
             onMenuToggle={() => setMobileSidebarOpen((open) => !open)}
           />
-          <main className="flex-1 p-4 pb-20 md:p-8">{children}</main>
+          <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-20 md:p-8">
+            {children}
+          </main>
         </div>
       </div>
     </ProtectedRoute>

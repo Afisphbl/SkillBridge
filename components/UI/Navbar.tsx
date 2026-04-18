@@ -1,19 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiLogOut, FiMenu, FiMoon, FiSun, FiUser } from "react-icons/fi";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
+import Link from "next/link";
+import { getUserById } from "@/services/supabase/userApi";
 
 export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const { handleSignOut, submitting, session } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [tinyMenuOpen, setTinyMenuOpen] = useState(false);
+  const [navbarUser, setNavbarUser] = useState<{
+    full_name?: string;
+    email?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadUserById() {
+      const userId = session?.user?.id;
+      if (!userId) {
+        if (mounted) setNavbarUser(null);
+        return;
+      }
+
+      const { data } = await getUserById(userId);
+      if (!mounted) return;
+
+      setNavbarUser(
+        (data as { full_name?: string; email?: string } | null) ?? null,
+      );
+    }
+
+    loadUserById();
+
+    return () => {
+      mounted = false;
+    };
+  }, [session?.user?.id]);
 
   const displayName =
-    (session?.user.user_metadata?.full_name as string | undefined) ||
-    session?.user.email ||
-    "User";
+    navbarUser?.full_name || navbarUser?.email || session?.user.email || "User";
 
   return (
     <header className="sticky top-0 z-30 border-b border-(--border-color) bg-(--bg-navbar)">
@@ -86,13 +115,13 @@ export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
 
         {tinyMenuOpen ? (
           <div className="absolute right-4 top-14 z-40 w-44 rounded-lg border border-(--border-color) bg-(--bg-card) p-2 shadow-lg min-[400px]:hidden">
-            <button
-              type="button"
+            <Link
+              href="/profile"
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-(--text-secondary) hover:bg-(--hover-bg)"
             >
               <FiUser className="size-4 text-(--color-primary)" />
               <span>Profile</span>
-            </button>
+            </Link>
             <button
               type="button"
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-(--text-secondary) hover:bg-(--hover-bg)"

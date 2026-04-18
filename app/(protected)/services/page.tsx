@@ -1,3 +1,8 @@
+export const metadata = {
+  title: "Services",
+  description: "Explore and manage service offerings available on SkillBridge.",
+};
+
 export default function ServicesPage() {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
