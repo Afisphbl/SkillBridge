@@ -1,20 +1,12 @@
 import { FaFacebookF, FaGithub, FaGoogle } from "react-icons/fa";
 
 const socialButtons = [
-  { provider: "google", label: "Google", icon: FaGoogle },
-  { provider: "github", label: "GitHub", icon: FaGithub },
-  { provider: "facebook", label: "Facebook", icon: FaFacebookF },
-] as const;
+  { label: "Google", icon: FaGoogle },
+  { label: "GitHub", icon: FaGithub },
+  { label: "Facebook", icon: FaFacebookF },
+];
 
-type SocialProvider = (typeof socialButtons)[number]["provider"];
-
-export default function SocialLoginButtons({
-  onProviderClick,
-  disabled = false,
-}: {
-  onProviderClick: (provider: SocialProvider) => void | Promise<void>;
-  disabled?: boolean;
-}) {
+export default function SocialLoginButtons()  {
   return (
     <div className="mt-5">
       <div className="relative text-center text-sm text-slate-500">
@@ -23,13 +15,11 @@ export default function SocialLoginButtons({
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-3">
-        {socialButtons.map(({ provider, label, icon: Icon }) => (
+        {socialButtons.map(({ label, icon: Icon }) => (
           <button
             key={label}
             type="button"
-            disabled={disabled}
-            onClick={() => void onProviderClick(provider)}
-            className="soft-field flex h-10 items-center justify-center rounded-md text-slate-600 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="soft-field flex h-10 items-center justify-center rounded-md text-slate-600 hover:bg-white"
             aria-label={`Continue with ${label}`}
           >
             <Icon className="size-4" />

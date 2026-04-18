@@ -1,4 +1,4 @@
-import { supabase, supabaseUrl } from "./client";
+import { supabase } from "./client";
 
 const BUCKET_NAME = "profileImages";
 
@@ -26,7 +26,7 @@ export async function uploadAvatar(file, userId) {
   const filePath = `avatars/${userId}_${timestamp}.${fileExt}`;
 
   // Upload to Supabase Storage
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from(BUCKET_NAME)
     .upload(filePath, file, {
       cacheControl: "3600",

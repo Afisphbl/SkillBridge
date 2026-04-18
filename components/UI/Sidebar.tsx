@@ -3,25 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  FiCalendar,
-  FiGrid,
+  FiBriefcase,
   FiHome,
   FiLogOut,
+  FiMessageSquare,
+  FiPackage,
   FiSettings,
   FiShoppingBag,
-  FiUsers,
+  FiUser,
   FiX,
 } from "react-icons/fi";
 import { cn } from "@/utils/helpers";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 
-const links = [
+const primaryLinks = [
   { href: "/home", label: "Home", icon: FiHome },
-  { href: "/dashboard", label: "Dashboard", icon: FiGrid },
-  { href: "/orders", label: "Bookings", icon: FiCalendar },
-  { href: "/gigs", label: "Cabins", icon: FiShoppingBag },
-  { href: "/profile", label: "Users", icon: FiUsers },
+  { href: "/services", label: "Services", icon: FiBriefcase },
+  { href: "/gigs", label: "Services", icon: FiShoppingBag },
+  { href: "/orders", label: "My Orders", icon: FiPackage },
+  { href: "/messages", label: "Messages", icon: FiMessageSquare },
+];
+
+const secondaryLinks = [
+  { href: "/profile", label: "Profile", icon: FiUser },
   { href: "/settings", label: "Settings", icon: FiSettings },
 ];
 
@@ -35,29 +40,39 @@ export default function Sidebar({
   const pathname = usePathname();
   const { handleSignOut, submitting } = useAuth();
 
+  const renderLink = (item: {
+    href: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }) => {
+    const Icon = item.icon;
+    const isActive = pathname === item.href;
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onClose}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-(--text-secondary) hover:bg-(--sidebar-item-hover) hover:text-(--text-primary)",
+          isActive &&
+            "bg-(--sidebar-item-active) text-(--color-primary) ring-1 ring-inset ring-(--border-color)",
+        )}
+        aria-current={isActive ? "page" : undefined}
+      >
+        <Icon className="size-4" />
+        <span>{item.label}</span>
+      </Link>
+    );
+  };
+
   const navItems = (
     <nav className="space-y-1.5">
-      {links.map((item) => {
-        const Icon = item.icon;
-        const isActive = pathname === item.href;
+      {primaryLinks.map(renderLink)}
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onClose}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-(--text-secondary) hover:bg-(--sidebar-item-hover) hover:text-(--text-primary)",
-              isActive &&
-                "bg-(--sidebar-item-active) text-(--color-primary) ring-1 ring-inset ring-(--border-color)",
-            )}
-            aria-current={isActive ? "page" : undefined}
-          >
-            <Icon className="size-4" />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
+      <div className="my-3 h-px w-full bg-(--border-color)" />
+
+      {secondaryLinks.map(renderLink)}
     </nav>
   );
 
@@ -65,18 +80,22 @@ export default function Sidebar({
     <div className="mb-8 border-b border-(--border-color) pb-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="relative grid size-11 place-items-center rounded-full bg-linear-to-br from-emerald-700 to-emerald-900 text-sm font-bold text-white">
+          <div className="grid size-11 place-items-center overflow-hidden rounded-full ring-2 ring-(--border-color)">
             <Image
               src="/SkillBridge.png"
-              alt="Logo"
-              fill
-              className="size-6 object-center object-cover"
+              alt="SkillBridge logo"
+              width={44}
+              height={44}
+              className="size-11 rounded-full object-cover"
             />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold tracking-[0.25em] text-(--text-muted)">
-              Skill<span className="text-(--text-primary)">Bridge</span>
+            <h1 className="bg-linear-to-r from-cyan-700 via-emerald-600 to-teal-700 bg-clip-text text-lg font-black tracking-[0.18em] text-transparent">
+              SKILLBRIDGE
             </h1>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-(--text-muted)">
+              Freelance Hub
+            </p>
           </div>
         </div>
         <button
@@ -104,7 +123,7 @@ export default function Sidebar({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-70 border-r border-(--border-color) bg-(--bg-sidebar) transition-transform max-[399px]:hidden md:hidden",
+          "fixed inset-y-0 left-0 z-50 w-55 border-r border-(--border-color) bg-(--bg-sidebar) transition-transform max-[399px]:hidden md:hidden",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -119,14 +138,14 @@ export default function Sidebar({
             className="mt-auto flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-(--color-primary) hover:bg-(--hover-bg) disabled:opacity-60"
           >
             <FiLogOut className="size-4" />
-            <span>Sign out</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>
 
       <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-(--border-color) bg-(--bg-sidebar) px-2 py-2 min-[400px]:hidden">
-        <nav className="grid grid-cols-6 gap-1">
-          {links.map((item) => {
+        <nav className="grid grid-cols-5 gap-1">
+          {primaryLinks.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
 
@@ -151,24 +170,18 @@ export default function Sidebar({
 
       <aside className="hidden border-r border-(--border-color) bg-(--bg-sidebar) md:block">
         <div className="flex h-full flex-col px-5 py-6">
-          <div className="mb-8 border-b border-(--border-color) pb-6">
-            <div className="flex items-center gap-3">
-              <div className="relative grid size-11 place-items-center rounded-full bg-linear-to-br from-emerald-700 to-emerald-900 text-sm font-bold text-white">
-                <Image
-                  src="/SkillBridge.png"
-                  alt="Logo"
-                  fill
-                  className="size-6 object-center object-cover"
-                />
-              </div>
-              <div>
-                <p className="text-xl font-extrabold tracking-[0.25em] text-(--text-muted)">
-                  Skill<span className="text-(--text-primary)">Bridge</span>
-                </p>
-              </div>
-            </div>
-          </div>
+          {brand}
           {navItems}
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={submitting}
+            className="mt-auto flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-(--color-primary) hover:bg-(--hover-bg) disabled:opacity-60"
+          >
+            <FiLogOut className="size-4" />
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
     </>

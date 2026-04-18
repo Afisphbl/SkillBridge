@@ -23,7 +23,7 @@ export default function ProtectedLayout({
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-[var(--bg-primary)] md:grid md:grid-cols-[196px_minmax(0,1fr)]">
+      <div className="min-h-screen bg-(--bg-primary) md:grid md:grid-cols-[250px_minmax(0,1fr)]">
         <SidebarComponent
           mobileOpen={mobileSidebarOpen}
           onClose={() => setMobileSidebarOpen(false)}
