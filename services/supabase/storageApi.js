@@ -49,12 +49,10 @@ export async function deleteAvatar(avatarUrl) {
   // Extract path from URL (works for both public and signed URLs)
   // Format usually: .../profileImages/path/to/file?token=...
   let path = avatarUrl.split(`${BUCKET_NAME}/`).pop()?.split("?")[0];
-  
+
   if (!path) return;
 
-  const { error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .remove([path]);
+  const { error } = await supabase.storage.from(BUCKET_NAME).remove([path]);
 
   if (error) {
     console.error("Storage deletion error:", error);
@@ -75,10 +73,11 @@ export async function getSignedAvatarUrl(path) {
   if (path.startsWith("http") && path.includes("token=")) return path;
 
   // If it's a public URL (old data), extract the path
-  const finalPath = path.startsWith("http") 
+  const finalPath = path.startsWith("http")
     ? path.split(`${BUCKET_NAME}/`).pop()?.split("?")[0]
     : path;
 
+  if (!finalPath) return null;
   const { data, error } = await supabase.storage
     .from(BUCKET_NAME)
     .createSignedUrl(finalPath, 60 * 60 * 24 * 365); // 1 year

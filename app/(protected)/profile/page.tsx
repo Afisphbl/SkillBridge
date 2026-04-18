@@ -6,7 +6,7 @@ import { useUser } from "@/hooks/useUser";
 export default function ProfilePage() {
   const { profile, loading } = useUser();
 
-  if (loading) {
+  if (loading || profile === null) {
     return <p className="text-sm text-slate-600">Loading profile...</p>;
   }
 

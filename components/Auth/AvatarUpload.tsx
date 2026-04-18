@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { FaCamera } from "react-icons/fa";
 
 type AvatarUploadProps = {
@@ -15,9 +15,18 @@ export default function AvatarUpload({
   error,
   onChange,
 }: AvatarUploadProps) {
-  const previewUrl = useMemo(() => {
-    if (!file) return null;
-    return URL.createObjectURL(file);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
   }, [file]);
 
   return (
