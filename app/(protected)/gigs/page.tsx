@@ -1,3 +1,9 @@
+export const metadata = {
+  title: "Gigs",
+  description:
+    "Manage your active services and create new offerings on SkillBridge.",
+};
+
 export default function GigsPage() {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

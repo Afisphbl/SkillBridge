@@ -15,7 +15,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "%s - SkillBridge",
+  title: {
+    template: "%s - SkillBridge",
+    default: "SkillBridge - Freelance Marketplace",
+  },
   description: "Freelance marketplace authentication platform",
 };
 

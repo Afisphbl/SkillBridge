@@ -54,6 +54,54 @@ button {
 }
 
 .soft-field {
-  background: #eef2f6;
-  border: 1px solid #e3e8ef;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+}
+
+.soft-field::placeholder {
+  color: var(--input-placeholder);
+}
+
+.soft-field:disabled,
+.soft-field[readonly] {
+  background: var(--input-bg-disabled);
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+@keyframes profile-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.profile-fade-in {
+  animation: profile-fade-in 300ms ease-out both;
+}
+
+.modal-pop {
+  animation: modal-pop 180ms ease-out both;
+}
+
+@media (min-width: 768px) {
+  .protected-content-shell {
+    padding-left: 250px;
+  }
 }

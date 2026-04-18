@@ -1,3 +1,9 @@
+export const metadata = {
+  title: "Messages",
+  description:
+    "View and respond to conversations with clients and freelancers on SkillBridge.",
+};
+
 export default function MessagesPage() {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

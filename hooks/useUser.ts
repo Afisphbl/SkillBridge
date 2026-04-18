@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { UserProfile } from "@/types/user";
-import { supabase } from "@/services/supabase/client";
+import { getUserById } from "@/services/supabase/userApi";
 import { useAuth } from "@/hooks/useAuth";
 
 export function useUser() {
@@ -10,26 +10,21 @@ export function useUser() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    async function fetchProfile() {
-      if (!session?.user.id) {
-        setProfile(null);
-        return;
-      }
-
-      setLoading(true);
-      const { data } = await supabase
-        .from("users")
-        .select("id,email,full_name,role,avatar")
-        .eq("id", session.user.id)
-        .single();
-
-      setProfile((data as UserProfile | null) ?? null);
-      setLoading(false);
+  const refreshProfile = useCallback(async () => {
+    if (!session?.user.id) {
+      setProfile(null);
+      return;
     }
 
-    fetchProfile();
+    setLoading(true);
+    const { data } = await getUserById(session.user.id);
+    setProfile((data as UserProfile | null) ?? null);
+    setLoading(false);
   }, [session?.user.id]);
 
-  return { profile, loading };
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
+
+  return { profile, loading, refreshProfile };
 }

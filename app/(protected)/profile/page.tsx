@@ -1,37 +1,274 @@
 "use client";
 
-import Image from "next/image";
+import { useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import ProfileHeader from "@/components/Profile/ProfileHeader";
+import AvatarUploader from "@/components/Profile/AvatarUploader";
+import ProfileForm from "@/components/Profile/ProfileForm";
+import AccountSettings from "@/components/Profile/AccountSettings";
+import DangerZone from "@/components/Profile/DangerZone";
+import DeleteAccountModal from "@/components/Profile/DeleteAccountModal";
+import ProfileSkeleton from "@/components/Profile/ProfileSkeleton";
+import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/hooks/useUser";
+import { deleteUser, updateUser } from "@/services/supabase/userApi";
+import { deleteAvatar } from "@/services/supabase/storageApi";
+
+type ProfileFormValues = {
+  fullName: string;
+  bio: string;
+  role: string;
+  email: string;
+};
 
 export default function ProfilePage() {
-  const { profile, loading } = useUser();
+  const { session, handleSignOut, submitting } = useAuth();
+  const { profile, loading, refreshProfile } = useUser();
+  const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(
+    undefined,
+  );
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(
+    null,
+  );
+  const [avatarUploadSuccess, setAvatarUploadSuccess] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const resolvedAvatarUrl =
+    avatarUrl === undefined ? (profile?.avatar ?? null) : avatarUrl;
 
-  if (loading || profile === null) {
-    return <p className="text-sm text-slate-600">Loading profile...</p>;
+  const profileView = useMemo(() => {
+    const fullName = profile?.full_name?.trim() || "SkillBridge Member";
+    const roleRaw = profile?.role || "seller";
+    const roleLabel = roleRaw.charAt(0).toUpperCase() + roleRaw.slice(1);
+    const email =
+      profile?.email || session?.user?.email || "no-email@skillbridge.app";
+    const createdAt = session?.user?.created_at;
+    const memberSince = createdAt
+      ? `Member since ${new Date(createdAt).toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        })}`
+      : "Member since recently";
+
+    return {
+      fullName,
+      roleLabel,
+      email,
+      memberSince,
+      bio: profile?.bio ?? "",
+    };
+  }, [
+    profile?.bio,
+    profile?.email,
+    profile?.full_name,
+    profile?.role,
+    session?.user?.created_at,
+    session?.user?.email,
+  ]);
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setAvatarUploadError("Please select a valid image file.");
+      setAvatarUploadSuccess(false);
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarUploadError(null);
+    setAvatarUploadSuccess(false);
+
+    try {
+      const fileUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("file-read-error"));
+        reader.readAsDataURL(file);
+      });
+
+      setAvatarUrl(fileUrl);
+      setAvatarUploadSuccess(true);
+      toast.success("Avatar updated in UI preview.");
+    } catch {
+      setAvatarUploadError("Unable to process this image. Try another file.");
+      toast.error("Avatar upload preview failed.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    const userId = session?.user?.id;
+    if (!userId) {
+      toast.error("Could not identify your account.");
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarUploadError(null);
+
+    try {
+      if (resolvedAvatarUrl) {
+        await deleteAvatar(resolvedAvatarUrl);
+      }
+
+      const { error } = await updateUser(userId, {
+        full_name: profile?.full_name || "",
+        role: profile?.role || "seller",
+        avatar: "",
+        bio: profile?.bio ?? "",
+      });
+
+      if (error) {
+        setAvatarUploadError(error.message || "Failed to remove avatar.");
+        toast.error(error.message || "Failed to remove avatar.");
+        return;
+      }
+
+      setAvatarUrl(null);
+      setAvatarUploadSuccess(false);
+      await refreshProfile();
+      toast.success("Avatar removed.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleSaveProfile = async (values: ProfileFormValues) => {
+    const userId = session?.user?.id;
+    if (!userId) {
+      toast.error("Could not identify your account.");
+      return;
+    }
+
+    setSavingProfile(true);
+    setProfileSaved(false);
+    try {
+      const normalizedRole = (
+        values.role ||
+        profile?.role ||
+        "seller"
+      ).toLowerCase();
+
+      const { error } = await updateUser(userId, {
+        full_name: values.fullName.trim(),
+        role: normalizedRole,
+        avatar: resolvedAvatarUrl ?? "",
+        bio: values.bio.trim(),
+      });
+
+      if (error) {
+        toast.error(error.message || "Failed to save profile changes.");
+        return;
+      }
+
+      await refreshProfile();
+      setProfileSaved(true);
+      toast.success("Profile changes saved.");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setProfileSaved(false);
+    toast("Changes reset.");
+  };
+
+  const handleChangePassword = () => {
+    toast("Password flow is available in account settings service.");
+  };
+
+  const handleDeleteAccount = async () => {
+    const userId = session?.user?.id;
+    if (!userId) {
+      toast.error("Could not identify your account.");
+      return;
+    }
+
+    setDeletingAccount(true);
+    try {
+      const { error } = await deleteUser(userId);
+      if (error) {
+        toast.error(error.message || "Failed to delete account.");
+        return;
+      }
+
+      setDeleteModalOpen(false);
+      toast.success("Account deleted successfully.");
+      await handleSignOut();
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
+  if (loading) {
+    return <ProfileSkeleton />;
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 className="text-xl font-bold text-slate-900">Profile</h1>
-      <div className="mt-4 flex items-center gap-4">
-        <div className="relative size-14 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
-          {profile?.avatar ? (
-            <Image
-              src={profile.avatar}
-              alt="Avatar"
-              fill
-              className="object-cover"
-              unoptimized
-            />
-          ) : null}
-        </div>
-        <div>
-          <p className="font-semibold text-slate-900">
-            {profile?.full_name ?? "User"}
-          </p>
-          <p className="text-sm text-slate-600">{profile?.email ?? "-"}</p>
+    <>
+      <div className="profile-fade-in mx-auto w-full max-w-250 space-y-6 rounded-3xl border border-(--border-color) bg-(--bg-card) p-4 shadow-[0_16px_35px_-22px_rgba(15,23,42,0.35)] sm:p-6 lg:p-8">
+        <ProfileHeader
+          fullName={profileView.fullName}
+          roleLabel={profileView.roleLabel}
+          email={profileView.email}
+          memberSince={profileView.memberSince}
+          avatarUrl={resolvedAvatarUrl}
+          onEditAvatar={() => avatarInputRef.current?.click()}
+        />
+
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 md:flex-row md:items-start">
+            <div className="space-y-6 md:w-75 md:shrink-0">
+              <AvatarUploader
+                avatarUrl={resolvedAvatarUrl}
+                uploading={avatarUploading}
+                uploadError={avatarUploadError}
+                uploadSuccess={avatarUploadSuccess}
+                onUpload={handleAvatarUpload}
+                onRemove={handleAvatarRemove}
+                externalInputRef={avatarInputRef}
+              />
+
+              <AccountSettings
+                signingOut={submitting}
+                onChangePassword={handleChangePassword}
+                onSignOut={handleSignOut}
+              />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <ProfileForm
+                initialValues={{
+                  fullName: profile?.full_name || "",
+                  bio: profileView.bio,
+                  role: profileView.roleLabel,
+                  email: profileView.email,
+                }}
+                onSave={handleSaveProfile}
+                onCancel={handleCancelEdit}
+                saving={savingProfile}
+                saveSuccess={profileSaved}
+              />
+            </div>
+          </div>
+
+          <div className="w-full">
+            <DangerZone onDeleteAccount={() => setDeleteModalOpen(true)} />
+          </div>
         </div>
       </div>
-    </section>
+
+      <DeleteAccountModal
+        open={deleteModalOpen}
+        deleting={deletingAccount}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteAccount}
+      />
+    </>
   );
 }
