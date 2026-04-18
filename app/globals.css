@@ -1,8 +1,25 @@
 @import "tailwindcss";
+@import "./_styles/index.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+  --auth-bg-gradient:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(14, 116, 144, 0.15),
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 80% 10%,
+      rgba(71, 85, 105, 0.16),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 50% 90%,
+      rgba(148, 163, 184, 0.2),
+      transparent 48%
+    );
 }
 
 @theme inline {
@@ -12,15 +29,31 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
+}
+
+a,
+button {
+  transition: all 180ms ease;
+}
+
+.auth-shell {
+  background-color: var(--bg-primary);
+  background-image: var(--auth-bg-gradient);
+}
+
+.auth-card {
+  background: color-mix(in oklab, white 85%, var(--bg-secondary));
+  border: 1px solid #dbe4ed;
+  box-shadow:
+    0 28px 60px -34px rgba(2, 6, 23, 0.55),
+    0 12px 28px -18px rgba(15, 23, 42, 0.35);
+}
+
+.soft-field {
+  background: #eef2f6;
+  border: 1px solid #e3e8ef;
 }

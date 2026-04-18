@@ -1,0 +1,270 @@
+/* ========================================
+   SKILLBRIDGE LIGHT MODE — SOFT SLATE BASE
+======================================== */
+
+:root {
+  /* ========================
+     BACKGROUNDS (NO PURE WHITE)
+  ======================== */
+
+  --bg-primary: #f8fafc; /* slate-50 (main app bg) */
+  --bg-secondary: #f1f5f9; /* slate-100 */
+  --bg-tertiary: #e2e8f0; /* slate-200 */
+  --bg-muted: #f8fafc;
+
+  --bg-card: #ffffff; /* clean cards */
+  --bg-card-hover: #f1f5f9;
+
+  --bg-sidebar: #ffffff;
+  --bg-navbar: #ffffff;
+
+  --bg-input: #ffffff;
+
+  /* ========================
+     TEXT
+  ======================== */
+
+  --text-primary: #0f172a; /* slate-900 */
+  --text-secondary: #334155; /* slate-700 */
+  --text-muted: #64748b; /* slate-500 */
+  --text-disabled: #94a3b8; /* slate-400 */
+  --text-inverse: #ffffff;
+
+  /* ========================
+     BORDERS
+  ======================== */
+
+  --border-color: #e2e8f0; /* slate-200 */
+  --border-hover: #cbd5e1; /* slate-300 */
+  --border-focus: #3b82f6; /* blue-500 */
+
+  --border-card: #e2e8f0;
+  --border-input: #e2e8f0;
+
+  /* ========================
+     BRAND COLORS
+  ======================== */
+
+  --color-primary: #2563eb; /* blue-600 */
+  --color-primary-hover: #1d4ed8; /* blue-700 */
+  --color-primary-active: #1e40af; /* blue-800 */
+
+  --color-secondary: #7c3aed;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-danger: #dc2626;
+  --color-info: #0ea5e9;
+
+  /* ========================
+     BUTTONS
+  ======================== */
+
+  --btn-bg-primary: var(--color-primary);
+  --btn-bg-primary-hover: var(--color-primary-hover);
+
+  --btn-bg-secondary: #f1f5f9;
+  --btn-bg-secondary-hover: #e2e8f0;
+
+  --btn-text-primary: #ffffff;
+  --btn-text-secondary: #0f172a;
+
+  /* ========================
+     INPUTS
+  ======================== */
+
+  --input-bg: #ffffff;
+  --input-border: #e2e8f0;
+  --input-border-focus: #3b82f6;
+  --input-text: #0f172a;
+  --input-placeholder: #94a3b8;
+
+  /* ========================
+     CARDS
+  ======================== */
+
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+
+  --card-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 6px rgba(15, 23, 42, 0.05);
+
+  /* ========================
+     HOVER STATES
+  ======================== */
+
+  --hover-bg: #f1f5f9;
+  --active-bg: #e2e8f0;
+
+  /* ========================
+     BADGES
+  ======================== */
+
+  --badge-success-bg: #dcfce7;
+  --badge-warning-bg: #fef3c7;
+  --badge-danger-bg: #fee2e2;
+
+  /* ========================
+     TABLES
+  ======================== */
+
+  --table-header-bg: #f8fafc;
+  --table-row-hover: #f1f5f9;
+  --table-border: #e2e8f0;
+
+  /* ========================
+     MODALS
+  ======================== */
+
+  --modal-bg: #ffffff;
+  --modal-overlay: rgba(15, 23, 42, 0.5);
+
+  /* ========================
+     SIDEBAR
+  ======================== */
+
+  --sidebar-bg: #ffffff;
+  --sidebar-item-hover: #f1f5f9;
+  --sidebar-item-active: #e2e8f0;
+
+  /* ========================
+     SCROLLBAR
+  ======================== */
+
+  --scrollbar-bg: #f8fafc;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+}
+
+/* ========================================
+   SKILLBRIDGE DARK MODE — SLATE 900 BASE
+======================================== */
+
+:root[data-theme="dark"] {
+  /* ========================
+     BACKGROUNDS
+  ======================== */
+
+  --bg-primary: #0f172a; /* slate-900 */
+  --bg-secondary: #1e293b; /* slate-800 */
+  --bg-tertiary: #020617; /* slate-950 */
+  --bg-muted: #020617;
+
+  --bg-card: #1e293b; /* slate-800 */
+  --bg-card-hover: #334155; /* slate-700 */
+
+  --bg-sidebar: #020617; /* slate-950 */
+  --bg-navbar: #020617;
+
+  --bg-input: #1e293b;
+
+  /* ========================
+     TEXT
+  ======================== */
+
+  --text-primary: #f1f5f9; /* slate-100 */
+  --text-secondary: #cbd5e1; /* slate-300 */
+  --text-muted: #94a3b8; /* slate-400 */
+  --text-disabled: #64748b; /* slate-500 */
+  --text-inverse: #020617;
+
+  /* ========================
+     BORDERS
+  ======================== */
+
+  --border-color: #334155; /* slate-700 */
+  --border-hover: #475569; /* slate-600 */
+  --border-focus: #3b82f6; /* blue-500 */
+
+  --border-card: #334155;
+  --border-input: #334155;
+
+  /* ========================
+     BRAND COLORS
+  ======================== */
+
+  --color-primary: #3b82f6; /* blue-500 */
+  --color-primary-hover: #2563eb; /* blue-600 */
+  --color-primary-active: #1d4ed8; /* blue-700 */
+
+  --color-secondary: #8b5cf6; /* violet-500 */
+  --color-success: #22c55e; /* green-500 */
+  --color-warning: #f59e0b; /* amber-500 */
+  --color-danger: #ef4444; /* red-500 */
+  --color-info: #06b6d4; /* cyan-500 */
+
+  /* ========================
+     BUTTONS
+  ======================== */
+
+  --btn-bg-primary: var(--color-primary);
+  --btn-bg-primary-hover: var(--color-primary-hover);
+
+  --btn-bg-secondary: #334155;
+  --btn-bg-secondary-hover: #475569;
+
+  --btn-text-primary: #ffffff;
+
+  /* ========================
+     INPUTS
+  ======================== */
+
+  --input-bg: #1e293b;
+  --input-border: #334155;
+  --input-border-focus: #3b82f6;
+  --input-text: #f1f5f9;
+  --input-placeholder: #64748b;
+
+  /* ========================
+     CARDS
+  ======================== */
+
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --card-shadow: 0 10px 15px rgba(0, 0, 0, 0.5);
+
+  /* ========================
+     HOVER STATES
+  ======================== */
+
+  --hover-bg: #334155;
+  --active-bg: #475569;
+
+  /* ========================
+     BADGES
+  ======================== */
+
+  --badge-success-bg: rgba(34, 197, 94, 0.15);
+  --badge-warning-bg: rgba(245, 158, 11, 0.15);
+  --badge-danger-bg: rgba(239, 68, 68, 0.15);
+
+  /* ========================
+     TABLES
+  ======================== */
+
+  --table-header-bg: #020617;
+  --table-row-hover: #1e293b;
+  --table-border: #334155;
+
+  /* ========================
+     SCROLLBAR
+  ======================== */
+
+  --scrollbar-bg: #020617;
+  --scrollbar-thumb: #334155;
+  --scrollbar-thumb-hover: #475569;
+
+  /* ========================
+     MODALS
+  ======================== */
+
+  --modal-bg: #020617;
+  --modal-overlay: rgba(0, 0, 0, 0.7);
+
+  /* ========================
+     SIDEBAR
+  ======================== */
+
+  --sidebar-bg: #020617;
+  --sidebar-item-hover: #1e293b;
+  --sidebar-item-active: #334155;
+}
