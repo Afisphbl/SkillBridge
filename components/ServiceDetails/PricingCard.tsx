@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FiHeart } from "react-icons/fi";
+import OrderNowButton from "@/components/Order/OrderNowButton";
 import { formatDelivery, formatPrice } from "@/utils/format";
 
 type PricingCardProps = {
@@ -38,12 +39,7 @@ export default function PricingCard({
         {summary || title}
       </p>
 
-      <button
-        type="button"
-        className="inline-flex h-11 w-full items-center justify-center rounded-md bg-(--color-primary) px-4 text-sm font-semibold text-white hover:opacity-90"
-      >
-        Order Now
-      </button>
+      <OrderNowButton className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-(--color-primary) px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70" />
 
       <button
         type="button"

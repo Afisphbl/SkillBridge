@@ -1,15 +1,10 @@
+import OrdersPageClient from "@/components/Orders/OrdersPageClient";
+
 export const metadata = {
   title: "Orders",
-  description: "Monitor incoming and completed project orders on SkillBridge.",
+  description: "Manage and track all your orders on SkillBridge.",
 };
 
 export default function OrdersPage() {
-  return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 className="text-xl font-bold text-slate-900">Orders</h1>
-      <p className="mt-2 text-slate-600">
-        Monitor incoming and completed project orders.
-      </p>
-    </section>
-  );
+  return <OrdersPageClient />;
 }

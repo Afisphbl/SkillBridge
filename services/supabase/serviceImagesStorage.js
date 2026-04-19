@@ -6,12 +6,14 @@ const BUCKET = "servicesImage";
  * Upload thumbnail
  */
 export async function uploadThumbnail(file, sellerId, serviceId) {
-  const filePath = `services/${sellerId}/${serviceId}/thumbnail-${Date.now()}`;
+  const safeName = file.name.replace(/\s/g, "_");
+  const filePath = `services/${sellerId}/${serviceId}/thumbnail-${Date.now()}-${safeName}`;
 
   const { data, error } = await supabase.storage
     .from(BUCKET)
     .upload(filePath, file, {
       cacheControl: "3600",
+      contentType: file.type,
       upsert: false,
     });
 
@@ -36,6 +38,7 @@ export async function uploadGalleryImages(files, sellerId, serviceId) {
       .from(BUCKET)
       .upload(filePath, file, {
         cacheControl: "3600",
+        contentType: file.type,
         upsert: false,
       });
 

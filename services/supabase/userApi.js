@@ -16,6 +16,20 @@ export async function getUserById(userId) {
   return { data, error };
 }
 
+/** Fetch users by a list of IDs */
+export async function getUsersByIds(ids = []) {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { users: [], error: null };
+  }
+
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("*")
+    .in("id", ids);
+
+  return { users, error };
+}
+
 /** Insert a new user profile record */
 export async function insertUser({ id, email, full_name, role, avatar }) {
   const { data, error } = await supabase

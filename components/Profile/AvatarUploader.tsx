@@ -130,7 +130,8 @@ export default function AvatarUploader({
 
         {uploadSuccess ? (
           <p className="inline-flex items-center gap-1 text-xs font-medium text-(--color-success)">
-            <FiCheckCircle className="size-4" /> Avatar updated
+            <FiCheckCircle className="size-4" /> Avatar change staged. Save
+            profile to apply.
           </p>
         ) : null}
 
