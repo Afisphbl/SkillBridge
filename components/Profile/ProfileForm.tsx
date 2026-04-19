@@ -19,6 +19,7 @@ type ProfileFormProps = {
   onCancel?: () => void;
   saving: boolean;
   saveSuccess: boolean;
+  hasPendingChanges?: boolean;
 };
 
 const BIO_MAX = 240;
@@ -29,6 +30,7 @@ export default function ProfileForm({
   onCancel,
   saving,
   saveSuccess,
+  hasPendingChanges = false,
 }: ProfileFormProps) {
   const {
     register,
@@ -175,7 +177,7 @@ export default function ProfileForm({
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <button
             type="submit"
-            disabled={saving || !isDirty}
+            disabled={saving || (!isDirty && !hasPendingChanges)}
             className="inline-flex min-w-36 items-center justify-center gap-2 rounded-lg bg-(--btn-bg-primary) px-4 py-2.5 text-sm font-semibold text-(--btn-text-primary) hover:-translate-y-0.5 hover:bg-(--btn-bg-primary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus) disabled:cursor-not-allowed disabled:opacity-70"
           >
             {saving ? (

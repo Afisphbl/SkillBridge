@@ -1,4 +1,4 @@
-import ServiceCard from "@/components/Marketplace/ServiceCard";
+import ServiceCard from "@/components/Services/ServiceCard";
 
 type ServiceRecord = {
   id?: string;

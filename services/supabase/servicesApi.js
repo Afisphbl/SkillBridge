@@ -42,6 +42,22 @@ export async function getServiceById(serviceId) {
 }
 
 /**
+ * Get services by a list of ids
+ */
+export async function getServicesByIds(ids = []) {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { services: [], error: null };
+  }
+
+  const { data: services, error } = await supabase
+    .from("services")
+    .select("id,title")
+    .in("id", ids);
+
+  return { services, error };
+}
+
+/**
  * Paginated services
  */
 export async function getServicesPaginated(page = 1, limit = 9) {

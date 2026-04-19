@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiAlertCircle, FiFilter, FiX } from "react-icons/fi";
-import FilterSidebar from "@/components/Marketplace/FilterSidebar";
-import SearchBar from "@/components/Marketplace/SearchBar";
-import ServiceCard from "@/components/Marketplace/ServiceCard";
+import FilterSidebar from "./FilterSidebar";
+import SearchBar from "./SearchBar";
+import ServiceCard from "./ServiceCard";
 import {
   getServicesByCategory,
   getServicesPaginated,

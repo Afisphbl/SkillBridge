@@ -35,6 +35,8 @@ export default function ProfilePage() {
     null,
   );
   const [avatarUploadSuccess, setAvatarUploadSuccess] = useState(false);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+  const [avatarDirty, setAvatarDirty] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -75,12 +77,6 @@ export default function ProfilePage() {
   ]);
 
   const handleAvatarUpload = async (file: File) => {
-    const userId = session?.user?.id;
-    if (!userId) {
-      toast.error("Could not identify your account.");
-      return;
-    }
-
     if (!file.type.startsWith("image/")) {
       setAvatarUploadError("Please select a valid image file.");
       setAvatarUploadSuccess(false);
@@ -105,74 +101,31 @@ export default function ProfilePage() {
         reader.readAsDataURL(file);
       });
 
-      const storageUrl = await uploadAvatar(file, userId);
-
-      const { error } = await updateUser(userId, {
-        full_name: profile?.full_name || "",
-        role: profile?.role || "seller",
-        avatar: storageUrl,
-        bio: profile?.bio ?? "",
-      });
-
-      if (error) {
-        setAvatarPreview(null);
-        setAvatarUploadError(error.message || "Failed to update avatar.");
-        toast.error(error.message || "Failed to update avatar.");
-        return;
-      }
-
       setAvatarPreview(previewUrl);
-      setAvatarUrl(storageUrl);
+      setPendingAvatarFile(file);
+      setAvatarUrl(undefined);
+      setAvatarDirty(true);
       setAvatarUploadSuccess(true);
-      await refreshProfile();
-      window.dispatchEvent(new CustomEvent("skillbridge:user-updated"));
-      toast.success("Avatar updated successfully.");
+      toast.success("Avatar selected. Click Save Changes to apply.");
     } catch {
       setAvatarPreview(null);
       setAvatarUploadError("Unable to upload this image. Try another file.");
-      toast.error("Avatar upload failed.");
+      setAvatarUploadSuccess(false);
+      toast.error("Unable to read this image file.");
     } finally {
       setAvatarUploading(false);
     }
   };
 
-  const handleAvatarRemove = async () => {
-    const userId = session?.user?.id;
-    if (!userId) {
-      toast.error("Could not identify your account.");
-      return;
-    }
-
-    setAvatarUploading(true);
+  const handleAvatarRemove = () => {
     setAvatarUploadError(null);
 
-    try {
-      if (persistedAvatarUrl) {
-        await deleteAvatar(persistedAvatarUrl);
-      }
-
-      const { error } = await updateUser(userId, {
-        full_name: profile?.full_name || "",
-        role: profile?.role || "seller",
-        avatar: "",
-        bio: profile?.bio ?? "",
-      });
-
-      if (error) {
-        setAvatarUploadError(error.message || "Failed to remove avatar.");
-        toast.error(error.message || "Failed to remove avatar.");
-        return;
-      }
-
-      setAvatarUrl(null);
-      setAvatarPreview(null);
-      setAvatarUploadSuccess(false);
-      await refreshProfile();
-      window.dispatchEvent(new CustomEvent("skillbridge:user-updated"));
-      toast.success("Avatar removed.");
-    } finally {
-      setAvatarUploading(false);
-    }
+    setPendingAvatarFile(null);
+    setAvatarUrl(null);
+    setAvatarPreview(null);
+    setAvatarDirty(true);
+    setAvatarUploadSuccess(true);
+    toast("Avatar removal staged. Click Save Changes to apply.");
   };
 
   const handleSaveProfile = async (values: ProfileFormValues) => {
@@ -183,6 +136,7 @@ export default function ProfilePage() {
     }
 
     setSavingProfile(true);
+    setAvatarUploading(true);
     setProfileSaved(false);
     try {
       const normalizedRole = (
@@ -191,10 +145,18 @@ export default function ProfilePage() {
         "seller"
       ).toLowerCase();
 
+      const previousAvatar = profile?.avatar ?? "";
+      let nextAvatar =
+        avatarUrl === undefined ? previousAvatar : (avatarUrl ?? "");
+
+      if (pendingAvatarFile) {
+        nextAvatar = await uploadAvatar(pendingAvatarFile, userId);
+      }
+
       const { error } = await updateUser(userId, {
         full_name: values.fullName.trim(),
         role: normalizedRole,
-        avatar: persistedAvatarUrl ?? "",
+        avatar: nextAvatar,
         bio: values.bio.trim(),
       });
 
@@ -203,17 +165,34 @@ export default function ProfilePage() {
         return;
       }
 
+      if (avatarDirty && previousAvatar && previousAvatar !== nextAvatar) {
+        await deleteAvatar(previousAvatar);
+      }
+
       await refreshProfile();
+      setAvatarUrl(undefined);
       setAvatarPreview(null);
+      setPendingAvatarFile(null);
+      setAvatarDirty(false);
+      setAvatarUploadSuccess(false);
       setProfileSaved(true);
+      setAvatarUploadError(null);
+      window.dispatchEvent(new CustomEvent("skillbridge:user-updated"));
       toast.success("Profile changes saved.");
     } finally {
+      setAvatarUploading(false);
       setSavingProfile(false);
     }
   };
 
   const handleCancelEdit = () => {
     setProfileSaved(false);
+    setAvatarUrl(undefined);
+    setAvatarPreview(null);
+    setPendingAvatarFile(null);
+    setAvatarDirty(false);
+    setAvatarUploadSuccess(false);
+    setAvatarUploadError(null);
     toast("Changes reset.");
   };
 
@@ -265,7 +244,7 @@ export default function ProfilePage() {
             <div className="space-y-6 md:w-75 md:shrink-0">
               <AvatarUploader
                 avatarUrl={resolvedAvatarUrl}
-                uploading={avatarUploading}
+                uploading={avatarUploading || savingProfile}
                 uploadError={avatarUploadError}
                 uploadSuccess={avatarUploadSuccess}
                 onUpload={handleAvatarUpload}
@@ -292,6 +271,7 @@ export default function ProfilePage() {
                 onCancel={handleCancelEdit}
                 saving={savingProfile}
                 saveSuccess={profileSaved}
+                hasPendingChanges={avatarDirty}
               />
             </div>
           </div>

@@ -68,6 +68,7 @@ export default function ServiceGallery({
             alt={title}
             fill
             unoptimized
+            loading="eager"
             className="object-cover transition duration-300 hover:scale-[1.02]"
             sizes="(max-width: 1024px) 100vw, 70vw"
           />
@@ -94,6 +95,7 @@ export default function ServiceGallery({
                     alt={`${title} ${index + 1}`}
                     fill
                     unoptimized
+                    loading="eager"
                     className="object-cover"
                     sizes="96px"
                   />
@@ -125,6 +127,7 @@ export default function ServiceGallery({
               alt={title}
               fill
               unoptimized
+              loading="eager"
               className="object-contain"
               sizes="100vw"
             />

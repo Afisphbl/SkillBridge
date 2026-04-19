@@ -6,17 +6,19 @@ import {
   getServicesByCategory,
 } from "@/services/supabase/servicesApi";
 import { getUserById } from "@/services/supabase/userApi";
-import PricingCard from "@/components/Marketplace/ServiceDetails/PricingCard";
-import RelatedServices from "@/components/Marketplace/ServiceDetails/RelatedServices";
-import ReviewsSection from "@/components/Marketplace/ServiceDetails/ReviewsSection";
-import SellerCard from "@/components/Marketplace/ServiceDetails/SellerCard";
-import ServiceDescription from "@/components/Marketplace/ServiceDetails/ServiceDescription";
-import ServiceGallery from "@/components/Marketplace/ServiceDetails/ServiceGallery";
-import ServiceHeader from "@/components/Marketplace/ServiceDetails/ServiceHeader";
+import PricingCard from "@/components/ServiceDetails/PricingCard";
+import RelatedServices from "@/components/ServiceDetails/RelatedServices";
+import ReviewsSection from "@/components/ServiceDetails/ReviewsSection";
+import SellerCard from "@/components/ServiceDetails/SellerCard";
+import ServiceDescription from "@/components/ServiceDetails/ServiceDescription";
+import ServiceGallery from "@/components/ServiceDetails/ServiceGallery";
+import ServiceHeader from "@/components/ServiceDetails/ServiceHeader";
+import OrderFormModal from "../../../../components/Order/OrderFormModal";
 import { FiArrowLeft } from "react-icons/fi";
 
 type ServicePageProps = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ orderform?: string | string[] }>;
 };
 
 type ServiceRecord = {
@@ -72,8 +74,15 @@ function toNumber(value: unknown, fallback = 0) {
   return Number.isFinite(numberValue) ? numberValue : fallback;
 }
 
-export default async function ServiceDetailsPage({ params }: ServicePageProps) {
+export default async function ServiceDetailsPage({
+  params,
+  searchParams,
+}: ServicePageProps) {
   const { id } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const isOrderFormOpen =
+    resolvedSearchParams?.orderform === "true" ||
+    resolvedSearchParams?.orderform === "1";
 
   const { service, error } = await getServiceById(id);
 
@@ -189,6 +198,27 @@ export default async function ServiceDetailsPage({ params }: ServicePageProps) {
           summary={currentService.description}
         />
       </div>
+
+      <OrderFormModal
+        open={isOrderFormOpen}
+        title={currentService.title || "Service"}
+        sellerName={seller?.full_name || seller?.email}
+        thumbnail={
+          currentService.thumbnail_url ||
+          currentService.image_url ||
+          currentService.cover_image ||
+          undefined
+        }
+        price={
+          currentService.price ??
+          currentService.base_price ??
+          currentService.hourly_rate ??
+          0
+        }
+        serviceId={String(currentService.id || "")}
+        sellerId={String(currentService.seller_id || "")}
+        summary={currentService.description}
+      />
     </section>
   );
 }

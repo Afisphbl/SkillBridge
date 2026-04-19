@@ -1,4 +1,4 @@
-import MarketplaceServicesClient from "@/components/Marketplace/MarketplaceServicesClient";
+import MarketplaceServicesClient from "@/components/Services/MarketplaceServicesClient";
 
 export const metadata = {
   title: "Services",
