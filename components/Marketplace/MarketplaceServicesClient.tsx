@@ -10,7 +10,7 @@ import {
   getServicesPaginated,
   searchServices,
 } from "@/services/supabase/servicesApi";
-import { getUserById } from "@/services/supabase/userApi";
+import { getUsersByIds } from "@/services/supabase/userApi";
 
 type ServiceRecord = {
   id?: string;
@@ -95,6 +95,13 @@ function filterServices(
     : null;
 
   return services.filter((service) => {
+    const category = normalizeText(service.category);
+    const selectedCategory = normalizeText(filters.category);
+
+    if (selectedCategory && category !== selectedCategory) {
+      return false;
+    }
+
     const subcategory = normalizeText(service.subcategory);
     const selectedSubcategory = normalizeText(filters.subcategory);
 
@@ -230,18 +237,17 @@ export default function MarketplaceServicesClient() {
 
       if (sellerIds.length === 0) return items;
 
-      const sellerEntries = await Promise.all(
-        sellerIds.map(async (sellerId) => {
-          const { data } = await getUserById(sellerId);
-          return [sellerId, (data as UserProfile | null) ?? null] as const;
-        }),
+      const { users } = await getUsersByIds(sellerIds);
+      const sellerMap = new Map(
+        ((users as Array<{ id?: string } & UserProfile> | null) ?? [])
+          .map((user) => [String(user.id ?? ""), user] as const)
+          .filter(([id]) => Boolean(id)),
       );
-
-      const sellerMap = new Map(sellerEntries);
 
       return items.map((service) => {
         const sellerId = String(service.seller_id ?? "").trim();
-        const profile = sellerMap.get(sellerId);
+        const profile =
+          (sellerMap.get(sellerId) as UserProfile | undefined) ?? null;
         const fallbackName = profile?.email?.split("@")[0] ?? "";
 
         return {
