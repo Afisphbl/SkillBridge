@@ -40,9 +40,11 @@ export default function ProfileForm({
     defaultValues: initialValues,
   });
 
+  const { fullName, bio, role, email } = initialValues;
+
   useEffect(() => {
-    reset(initialValues);
-  }, [initialValues, reset]);
+    reset({ fullName, bio, role, email });
+  }, [bio, email, fullName, reset, role]);
 
   const bioValue = useWatch({ control, name: "bio" }) ?? "";
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import toast from "react-hot-toast";
 import {
+  ensureUserProfileExists,
   getSession,
   onAuthStateChange,
   saveUserProfile,
@@ -78,6 +79,16 @@ export function useAuth() {
           const message = mapSupabaseError(error.message);
           toast.error(message);
           return { success: false, message };
+        }
+
+        if (data.user) {
+          const { error: syncError } = await ensureUserProfileExists(data.user);
+          if (syncError) {
+            const message =
+              "Login succeeded but we could not sync your profile.";
+            toast.error(message);
+            return { success: false, message };
+          }
         }
 
         writeAuthCookie(data.session?.access_token ?? null, rememberMe);

@@ -1,6 +1,10 @@
 export default function ProfileSkeleton() {
   return (
-    <section className="mx-auto w-full max-w-225 space-y-6">
+    <section
+      className="mx-auto w-full max-w-225 space-y-6"
+      aria-busy="true"
+      aria-label="Loading profile"
+    >
       <div className="animate-pulse rounded-2xl border border-(--border-color) bg-(--bg-card) p-5 shadow-(--card-shadow) sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="size-24 rounded-full bg-(--bg-secondary)" />

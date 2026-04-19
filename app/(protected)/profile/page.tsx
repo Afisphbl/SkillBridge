@@ -12,7 +12,7 @@ import ProfileSkeleton from "@/components/Profile/ProfileSkeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/hooks/useUser";
 import { deleteUser, updateUser } from "@/services/supabase/userApi";
-import { deleteAvatar } from "@/services/supabase/storageApi";
+import { deleteAvatar, uploadAvatar } from "@/services/supabase/storageApi";
 
 type ProfileFormValues = {
   fullName: string;
@@ -21,12 +21,15 @@ type ProfileFormValues = {
   email: string;
 };
 
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
+
 export default function ProfilePage() {
   const { session, handleSignOut, submitting } = useAuth();
   const { profile, loading, refreshProfile } = useUser();
   const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(
     undefined,
   );
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarUploadError, setAvatarUploadError] = useState<string | null>(
     null,
@@ -37,8 +40,9 @@ export default function ProfilePage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
-  const resolvedAvatarUrl =
+  const persistedAvatarUrl =
     avatarUrl === undefined ? (profile?.avatar ?? null) : avatarUrl;
+  const resolvedAvatarUrl = avatarPreview ?? persistedAvatarUrl;
 
   const profileView = useMemo(() => {
     const fullName = profile?.full_name?.trim() || "SkillBridge Member";
@@ -71,8 +75,20 @@ export default function ProfilePage() {
   ]);
 
   const handleAvatarUpload = async (file: File) => {
+    const userId = session?.user?.id;
+    if (!userId) {
+      toast.error("Could not identify your account.");
+      return;
+    }
+
     if (!file.type.startsWith("image/")) {
       setAvatarUploadError("Please select a valid image file.");
+      setAvatarUploadSuccess(false);
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      setAvatarUploadError("File too large. Max size is 2MB.");
       setAvatarUploadSuccess(false);
       return;
     }
@@ -82,19 +98,39 @@ export default function ProfilePage() {
     setAvatarUploadSuccess(false);
 
     try {
-      const fileUrl = await new Promise<string>((resolve, reject) => {
+      const previewUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result));
         reader.onerror = () => reject(new Error("file-read-error"));
         reader.readAsDataURL(file);
       });
 
-      setAvatarUrl(fileUrl);
+      const storageUrl = await uploadAvatar(file, userId);
+
+      const { error } = await updateUser(userId, {
+        full_name: profile?.full_name || "",
+        role: profile?.role || "seller",
+        avatar: storageUrl,
+        bio: profile?.bio ?? "",
+      });
+
+      if (error) {
+        setAvatarPreview(null);
+        setAvatarUploadError(error.message || "Failed to update avatar.");
+        toast.error(error.message || "Failed to update avatar.");
+        return;
+      }
+
+      setAvatarPreview(previewUrl);
+      setAvatarUrl(storageUrl);
       setAvatarUploadSuccess(true);
-      toast.success("Avatar updated in UI preview.");
+      await refreshProfile();
+      window.dispatchEvent(new CustomEvent("skillbridge:user-updated"));
+      toast.success("Avatar updated successfully.");
     } catch {
-      setAvatarUploadError("Unable to process this image. Try another file.");
-      toast.error("Avatar upload preview failed.");
+      setAvatarPreview(null);
+      setAvatarUploadError("Unable to upload this image. Try another file.");
+      toast.error("Avatar upload failed.");
     } finally {
       setAvatarUploading(false);
     }
@@ -111,8 +147,8 @@ export default function ProfilePage() {
     setAvatarUploadError(null);
 
     try {
-      if (resolvedAvatarUrl) {
-        await deleteAvatar(resolvedAvatarUrl);
+      if (persistedAvatarUrl) {
+        await deleteAvatar(persistedAvatarUrl);
       }
 
       const { error } = await updateUser(userId, {
@@ -129,8 +165,10 @@ export default function ProfilePage() {
       }
 
       setAvatarUrl(null);
+      setAvatarPreview(null);
       setAvatarUploadSuccess(false);
       await refreshProfile();
+      window.dispatchEvent(new CustomEvent("skillbridge:user-updated"));
       toast.success("Avatar removed.");
     } finally {
       setAvatarUploading(false);
@@ -156,7 +194,7 @@ export default function ProfilePage() {
       const { error } = await updateUser(userId, {
         full_name: values.fullName.trim(),
         role: normalizedRole,
-        avatar: resolvedAvatarUrl ?? "",
+        avatar: persistedAvatarUrl ?? "",
         bio: values.bio.trim(),
       });
 
@@ -166,6 +204,7 @@ export default function ProfilePage() {
       }
 
       await refreshProfile();
+      setAvatarPreview(null);
       setProfileSaved(true);
       toast.success("Profile changes saved.");
     } finally {

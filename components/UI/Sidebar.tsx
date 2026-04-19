@@ -40,25 +40,46 @@ export default function Sidebar({
 }) {
   const pathname = usePathname();
   const { handleSignOut, submitting } = useAuth();
-  const [viewport, setViewport] = useState<"tiny" | "mobile" | "desktop">(
-    "mobile",
-  );
+  const [viewport, setViewport] = useState<
+    "tiny" | "mobile" | "desktop" | null
+  >(() => {
+    if (typeof window === "undefined") return null;
+    if (window.matchMedia("(max-width: 399px)").matches) return "tiny";
+    if (window.matchMedia("(max-width: 767px)").matches) return "mobile";
+    return "desktop";
+  });
 
   useEffect(() => {
-    const updateViewport = () => {
-      if (window.innerWidth < 400) {
+    const tinyQuery = window.matchMedia("(max-width: 399px)");
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+
+    const updateViewportFromQueries = () => {
+      if (tinyQuery.matches) {
         setViewport("tiny");
-      } else if (window.innerWidth < 768) {
-        setViewport("mobile");
-      } else {
-        setViewport("desktop");
+        return;
       }
+
+      if (mobileQuery.matches) {
+        setViewport("mobile");
+        return;
+      }
+
+      setViewport("desktop");
     };
 
-    updateViewport();
-    window.addEventListener("resize", updateViewport);
-    return () => window.removeEventListener("resize", updateViewport);
+    updateViewportFromQueries();
+    tinyQuery.addEventListener("change", updateViewportFromQueries);
+    mobileQuery.addEventListener("change", updateViewportFromQueries);
+
+    return () => {
+      tinyQuery.removeEventListener("change", updateViewportFromQueries);
+      mobileQuery.removeEventListener("change", updateViewportFromQueries);
+    };
   }, []);
+
+  if (viewport === null) {
+    return null;
+  }
 
   const renderLink = (item: {
     href: string;

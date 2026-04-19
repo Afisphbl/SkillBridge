@@ -21,18 +21,18 @@ export default function DeleteAccountModal({
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && !deleting) onClose();
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, deleting, onClose]);
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-70 grid place-items-center bg-(--modal-overlay) px-4"
+      className="fixed inset-0 z-70 grid place-items-center bg-black/65 px-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-account-title"
@@ -40,10 +40,10 @@ export default function DeleteAccountModal({
       onClick={onClose}
     >
       <div
-        className="modal-pop w-full rounded-2xl border border-(--border-color) bg-(--modal-bg) p-6 shadow-xl"
+        className="modal-pop w-md max-w-full rounded-2xl border border-(--border-color) bg-(--modal-bg) p-6 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="mx-auto mb-3 inline-flex size-11 items-center justify-center rounded-full bg-red-100 text-red-700">
+        <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-red-100 text-red-700">
           <FiAlertTriangle className="size-5" />
         </div>
 

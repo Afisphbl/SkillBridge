@@ -30,6 +30,7 @@ export default function ProfileHeader({
                   alt="Profile avatar"
                   fill
                   unoptimized
+                  loading="eager"
                   className="object-cover"
                 />
               ) : (

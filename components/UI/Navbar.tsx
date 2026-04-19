@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import Link from "next/link";
 import { getUserById } from "@/services/supabase/userApi";
+import Image from "next/image";
 
 export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const { handleSignOut, submitting, session } = useAuth();
@@ -14,6 +15,7 @@ export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const [navbarUser, setNavbarUser] = useState<{
     full_name?: string;
     email?: string;
+    avatar?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -30,19 +32,32 @@ export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
       if (!mounted) return;
 
       setNavbarUser(
-        (data as { full_name?: string; email?: string } | null) ?? null,
+        (data as {
+          full_name?: string;
+          email?: string;
+          avatar?: string;
+        } | null) ?? null,
       );
     }
 
     loadUserById();
 
+    const handleUserUpdated = () => {
+      loadUserById();
+    };
+
+    window.addEventListener("skillbridge:user-updated", handleUserUpdated);
+
     return () => {
       mounted = false;
+      window.removeEventListener("skillbridge:user-updated", handleUserUpdated);
     };
   }, [session?.user?.id]);
 
   const displayName =
     navbarUser?.full_name || navbarUser?.email || session?.user.email || "User";
+  const avatarUrl = navbarUser?.avatar || "";
+  const avatarLetter = displayName.slice(0, 1).toUpperCase() || "U";
 
   return (
     <header className="sticky top-0 z-30 border-b border-(--border-color) bg-(--bg-navbar)">
@@ -56,22 +71,55 @@ export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
           <FiMenu className="size-5" />
         </button>
 
-        <div className="grid size-8 place-items-center rounded-full bg-(--color-primary) text-xs font-semibold text-(--text-inverse) min-[400px]:hidden">
-          {displayName.slice(0, 1).toUpperCase()}
+        <div className="grid size-8 place-items-center overflow-hidden rounded-full bg-(--color-primary) text-xs font-semibold text-(--text-inverse) min-[400px]:hidden">
+          {avatarUrl ? (
+            <Image
+              src={avatarUrl}
+              alt="User avatar"
+              width={32}
+              height={32}
+              unoptimized
+              className="size-8 rounded-full object-cover"
+            />
+          ) : (
+            avatarLetter
+          )}
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-4 text-(--text-secondary) max-[399px]:hidden">
           <div className="hidden items-center gap-3 md:flex">
-            <div className="grid size-8 place-items-center rounded-full bg-(--color-primary) text-xs font-semibold text-(--text-inverse)">
-              {displayName.slice(0, 1).toUpperCase()}
+            <div className="grid size-8 place-items-center overflow-hidden rounded-full bg-(--color-primary) text-xs font-semibold text-(--text-inverse)">
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt="User avatar"
+                  width={32}
+                  height={32}
+                  unoptimized
+                  className="size-8 rounded-full object-cover"
+                />
+              ) : (
+                avatarLetter
+              )}
             </div>
             <span className="text-sm font-medium text-(--text-secondary)">
               {displayName}
             </span>
           </div>
 
-          <div className="grid size-8 place-items-center rounded-full bg-(--color-primary) text-xs font-semibold text-(--text-inverse) md:hidden">
-            {displayName.slice(0, 1).toUpperCase()}
+          <div className="grid size-8 place-items-center overflow-hidden rounded-full bg-(--color-primary) text-xs font-semibold text-(--text-inverse) md:hidden">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt="User avatar"
+                width={32}
+                height={32}
+                unoptimized
+                className="size-8 rounded-full object-cover"
+              />
+            ) : (
+              avatarLetter
+            )}
           </div>
 
           <button

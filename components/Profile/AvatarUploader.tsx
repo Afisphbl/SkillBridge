@@ -65,6 +65,7 @@ export default function AvatarUploader({
               alt="Current profile image"
               fill
               unoptimized
+              loading="eager"
               className="object-cover"
             />
           ) : (

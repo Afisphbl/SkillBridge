@@ -1,4 +1,5 @@
 import { supabase } from "@/services/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 export type SignUpInput = {
   email: string;
@@ -43,6 +44,55 @@ export function onAuthStateChange(
 
 export async function getSession() {
   return supabase.auth.getSession();
+}
+
+function resolveUserRole(rawRole: unknown): "buyer" | "seller" | "both" {
+  if (rawRole === "buyer" || rawRole === "seller" || rawRole === "both") {
+    return rawRole;
+  }
+
+  return "buyer";
+}
+
+function resolveFullName(user: User) {
+  const metadata = user.user_metadata ?? {};
+  return (
+    metadata.full_name ||
+    metadata.name ||
+    user.email?.split("@")[0] ||
+    "SkillBridge User"
+  );
+}
+
+function resolveAvatar(user: User) {
+  const metadata = user.user_metadata ?? {};
+  return metadata.avatar_url || metadata.picture || "";
+}
+
+export async function ensureUserProfileExists(user: User) {
+  const { data: existingUser, error: checkError } = await supabase
+    .from("users")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (checkError) {
+    return { data: null, error: checkError };
+  }
+
+  if (existingUser) {
+    return { data: existingUser, error: null };
+  }
+
+  const payload = {
+    id: user.id,
+    email: user.email ?? "",
+    full_name: resolveFullName(user),
+    role: resolveUserRole(user.user_metadata?.role),
+    avatar: resolveAvatar(user),
+  };
+
+  return supabase.from("users").insert(payload).select("id").single();
 }
 
 export async function uploadAvatar(file: File, userId: string) {
