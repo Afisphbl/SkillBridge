@@ -13,7 +13,7 @@ import SellerCard from "@/components/ServiceDetails/SellerCard";
 import ServiceDescription from "@/components/ServiceDetails/ServiceDescription";
 import ServiceGallery from "@/components/ServiceDetails/ServiceGallery";
 import ServiceHeader from "@/components/ServiceDetails/ServiceHeader";
-import OrderFormModal from "../../../../components/Order/OrderFormModal";
+import OrderFormModal from "@/components/Order/OrderFormModal";
 import { FiArrowLeft } from "react-icons/fi";
 
 type ServicePageProps = {

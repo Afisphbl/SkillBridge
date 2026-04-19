@@ -138,6 +138,7 @@ export default function ProfilePage() {
     setSavingProfile(true);
     setAvatarUploading(true);
     setProfileSaved(false);
+    let uploadedAvatar: string | null = null;
     try {
       const normalizedRole = (
         values.role ||
@@ -151,6 +152,7 @@ export default function ProfilePage() {
 
       if (pendingAvatarFile) {
         nextAvatar = await uploadAvatar(pendingAvatarFile, userId);
+        uploadedAvatar = nextAvatar;
       }
 
       const { error } = await updateUser(userId, {
@@ -162,11 +164,14 @@ export default function ProfilePage() {
 
       if (error) {
         toast.error(error.message || "Failed to save profile changes.");
+        if (uploadedAvatar) {
+          await deleteAvatar(uploadedAvatar).catch(() => {});
+        }
         return;
       }
 
       if (avatarDirty && previousAvatar && previousAvatar !== nextAvatar) {
-        await deleteAvatar(previousAvatar);
+        await deleteAvatar(previousAvatar).catch(() => {});
       }
 
       await refreshProfile();
@@ -179,6 +184,13 @@ export default function ProfilePage() {
       setAvatarUploadError(null);
       window.dispatchEvent(new CustomEvent("skillbridge:user-updated"));
       toast.success("Profile changes saved.");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to save profile changes.";
+      toast.error(message);
+      if (uploadedAvatar) {
+        await deleteAvatar(uploadedAvatar).catch(() => {});
+      }
     } finally {
       setAvatarUploading(false);
       setSavingProfile(false);

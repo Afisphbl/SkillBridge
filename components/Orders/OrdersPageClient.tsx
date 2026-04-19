@@ -223,16 +223,28 @@ export default function OrdersPageClient() {
   useEffect(() => {
     if (!currentUserId) return;
 
-    const channel = supabase
-      .channel(`orders-live-${currentUserId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
-        () => {
-          void fetchOrders();
-        },
-      )
-      .subscribe();
+    const channel = supabase.channel(`orders-live-${currentUserId}`);
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "orders",
+        filter: `buyer_id=eq.${currentUserId}`,
+      },
+      () => void fetchOrders(),
+    );
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "orders",
+        filter: `seller_id=eq.${currentUserId}`,
+      },
+      () => void fetchOrders(),
+    );
+    channel.subscribe();
 
     return () => {
       void supabase.removeChannel(channel);

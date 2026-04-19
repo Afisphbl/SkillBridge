@@ -95,7 +95,6 @@ export default function ServiceGallery({
                     alt={`${title} ${index + 1}`}
                     fill
                     unoptimized
-                    loading="eager"
                     className="object-cover"
                     sizes="96px"
                   />

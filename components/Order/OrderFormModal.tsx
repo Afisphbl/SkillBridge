@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import Image from "next/image";
@@ -102,10 +102,14 @@ export default function OrderFormModal({
     defaultValues: EMPTY_FORM_VALUES,
   });
 
+  const searchParams = useSearchParams();
   const closeModal = useCallback(() => {
     if (isSubmitting) return;
-    router.replace(pathname);
-  }, [isSubmitting, pathname, router]);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("orderform");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }, [isSubmitting, pathname, router, searchParams]);
 
   const priceNumber = Number(price);
   const platformFee = Number((priceNumber * 0.1).toFixed(2));

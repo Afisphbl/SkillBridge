@@ -15,7 +15,7 @@ export default function OrderNowButton({ className }: OrderNowButtonProps) {
   const handleOpenOrderForm = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("orderform", "true");
-    router.push(`${pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   return (
