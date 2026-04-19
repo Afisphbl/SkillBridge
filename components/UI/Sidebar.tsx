@@ -174,7 +174,7 @@ export default function Sidebar({
 
   if (viewport === "tiny") {
     return (
-      <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-(--border-color) bg-(--bg-sidebar) px-2 py-2">
+      <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-(--border-color) bg-(--bg-sidebar) px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
         <nav className="grid grid-cols-5 gap-1">
           {primaryLinks.map((item) => {
             const Icon = item.icon;
@@ -185,14 +185,42 @@ export default function Sidebar({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "grid place-items-center rounded-md py-2 text-(--text-muted)",
-                  isActive &&
-                    "bg-(--sidebar-item-active) text-(--color-primary)",
+                  "relative grid place-items-center rounded-md py-2 text-(--text-muted) transition-colors duration-200 ease-in-out",
+                  isActive
+                    ? "text-(--color-primary)"
+                    : "hover:text-(--text-secondary)",
                 )}
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
               >
-                <Icon className="size-4" />
+                <span
+                  className={cn(
+                    "pointer-events-none absolute inset-x-2 top-1 bottom-1 rounded-full transition duration-200 ease-in-out",
+                    isActive
+                      ? "bg-(--sidebar-item-active) shadow-[0_8px_18px_-14px_var(--color-primary)] -translate-y-2"
+                      : "opacity-0 translate-y-0",
+                  )}
+                  aria-hidden
+                />
+
+                <span
+                  className={cn(
+                    "relative z-10 grid place-items-center transition-transform duration-200 ease-in-out will-change-transform",
+                    isActive
+                      ? "-translate-y-2 scale-110 text-(--text-primary)"
+                      : "translate-y-0 scale-100",
+                  )}
+                >
+                  <Icon className="size-4" />
+                </span>
+
+                <span
+                  className={cn(
+                    "pointer-events-none absolute -bottom-0.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-(--color-primary) transition-all duration-200 ease-in-out",
+                    isActive ? "scale-100 opacity-100" : "scale-75 opacity-0",
+                  )}
+                  aria-hidden
+                />
               </Link>
             );
           })}
