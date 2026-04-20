@@ -223,6 +223,8 @@ export default function MessagesInboxChatPanel() {
                 type="button"
                 onClick={() => void handleSend()}
                 disabled={
+                  !canSendInSelectedConversation ||
+                  Boolean(chatError) ||
                   !selectedConversation?.peer_id ||
                   !messageInput.trim() ||
                   sendingMessage

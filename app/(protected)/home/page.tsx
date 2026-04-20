@@ -15,22 +15,6 @@ export default async function HomePage() {
   const { services } = await getServices();
   const serviceRows = (Array.isArray(services) ? services : []) as ServiceRow[];
 
-  const sellerIds = Array.from(
-    new Set(
-      serviceRows
-        .map((service) => String(service.seller_id || "").trim())
-        .filter(Boolean),
-    ),
-  );
-
-  const { users } = await getUsersByIds(sellerIds);
-  const sellerMap = new Map<string, SellerRow>(
-    (Array.isArray(users) ? users : []).map((user) => [
-      String(user.id),
-      user as SellerRow,
-    ]),
-  );
-
   const categories = Array.from(
     new Set(
       serviceRows
@@ -46,6 +30,22 @@ export default async function HomePage() {
         toNumber(left.average_rating ?? left.rating),
     )
     .slice(0, 3);
+
+  const sellerIds = Array.from(
+    new Set(
+      featuredServices
+        .map((service) => String(service.seller_id || "").trim())
+        .filter(Boolean),
+    ),
+  );
+
+  const users = sellerIds.length ? (await getUsersByIds(sellerIds)).users : [];
+  const sellerMap = new Map<string, SellerRow>(
+    (Array.isArray(users) ? users : []).map((user) => [
+      String(user.id),
+      user as SellerRow,
+    ]),
+  );
 
   return (
     <section className="space-y-8">

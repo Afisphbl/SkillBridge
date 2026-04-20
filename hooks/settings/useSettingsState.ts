@@ -35,7 +35,12 @@ export type PrivacySettings = {
 
 export type BuyerPaymentSettings = {
   methods: Array<{ id: string; label: string; last4: string }>;
-  transactionPreview: Array<{ id: string; label: string; amount: string; date: string }>;
+  transactionPreview: Array<{
+    id: string;
+    label: string;
+    amount: string;
+    date: string;
+  }>;
 };
 
 export type SellerPaymentSettings = {
@@ -110,7 +115,12 @@ const defaultPrivacy: PrivacySettings = {
 const defaultBuyerPayment: BuyerPaymentSettings = {
   methods: [{ id: "pm-1", label: "Visa", last4: "4242" }],
   transactionPreview: [
-    { id: "t-1", label: "Logo Design Order", amount: "$120.00", date: "Apr 17" },
+    {
+      id: "t-1",
+      label: "Logo Design Order",
+      amount: "$120.00",
+      date: "Apr 17",
+    },
     { id: "t-2", label: "Landing Page Copy", amount: "$85.00", date: "Apr 12" },
   ],
 };
@@ -193,18 +203,24 @@ export function useSettingsState() {
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
 
-  const [profileSettings, setProfileSettings] = useState<ProfileSettings>(defaultProfile);
-  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>(defaultSecurity);
+  const [profileSettings, setProfileSettings] =
+    useState<ProfileSettings>(defaultProfile);
+  const [securitySettings, setSecuritySettings] =
+    useState<SecuritySettings>(defaultSecurity);
   const [notificationSettings, setNotificationSettings] =
     useState<NotificationSettings>(defaultNotifications);
-  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>(defaultPrivacy);
+  const [privacySettings, setPrivacySettings] =
+    useState<PrivacySettings>(defaultPrivacy);
   const [buyerPayment, setBuyerPayment] =
     useState<BuyerPaymentSettings>(defaultBuyerPayment);
   const [sellerPayment, setSellerPayment] =
     useState<SellerPaymentSettings>(defaultSellerPayment);
-  const [accountSettings, setAccountSettings] = useState<AccountSettings>(defaultAccount);
+  const [accountSettings, setAccountSettings] =
+    useState<AccountSettings>(defaultAccount);
 
-  const [savingBySection, setSavingBySection] = useState<Record<SettingsTab, boolean>>({
+  const [savingBySection, setSavingBySection] = useState<
+    Record<SettingsTab, boolean>
+  >({
     profile: false,
     security: false,
     notifications: false,
@@ -215,10 +231,13 @@ export function useSettingsState() {
   });
 
   const [initialProfile, setInitialProfile] = useState(defaultProfile);
-  const [initialNotifications, setInitialNotifications] = useState(defaultNotifications);
+  const [initialNotifications, setInitialNotifications] =
+    useState(defaultNotifications);
   const [initialPrivacy, setInitialPrivacy] = useState(defaultPrivacy);
-  const [initialBuyerPayment, setInitialBuyerPayment] = useState(defaultBuyerPayment);
-  const [initialSellerPayment, setInitialSellerPayment] = useState(defaultSellerPayment);
+  const [initialBuyerPayment, setInitialBuyerPayment] =
+    useState(defaultBuyerPayment);
+  const [initialSellerPayment, setInitialSellerPayment] =
+    useState(defaultSellerPayment);
   const [initialSecurity, setInitialSecurity] = useState(defaultSecurity);
   const [initialAccount, setInitialAccount] = useState(defaultAccount);
 
@@ -279,7 +298,15 @@ export function useSettingsState() {
     setInitialBuyerPayment(nextBuyerPayment);
     setInitialSellerPayment(nextSellerPayment);
     setInitialAccount(nextAccount);
-  }, [mode, profile?.avatar, profile?.bio, profile?.email, profile?.full_name, session?.user?.email, userId]);
+  }, [
+    mode,
+    profile?.avatar,
+    profile?.bio,
+    profile?.email,
+    profile?.full_name,
+    session?.user?.email,
+    userId,
+  ]);
 
   const isProfileDirty = useMemo(() => {
     return (
@@ -299,7 +326,9 @@ export function useSettingsState() {
   }, [initialSecurity.twoFactorEnabled, securitySettings]);
 
   const isNotificationsDirty = useMemo(
-    () => JSON.stringify(notificationSettings) !== JSON.stringify(initialNotifications),
+    () =>
+      JSON.stringify(notificationSettings) !==
+      JSON.stringify(initialNotifications),
     [initialNotifications, notificationSettings],
   );
 
@@ -310,11 +339,19 @@ export function useSettingsState() {
 
   const isPaymentDirty = useMemo(() => {
     if (role === "seller") {
-      return JSON.stringify(sellerPayment) !== JSON.stringify(initialSellerPayment);
+      return (
+        JSON.stringify(sellerPayment) !== JSON.stringify(initialSellerPayment)
+      );
     }
 
     return JSON.stringify(buyerPayment) !== JSON.stringify(initialBuyerPayment);
-  }, [buyerPayment, initialBuyerPayment, initialSellerPayment, role, sellerPayment]);
+  }, [
+    buyerPayment,
+    initialBuyerPayment,
+    initialSellerPayment,
+    role,
+    sellerPayment,
+  ]);
 
   const isAccountDirty = useMemo(
     () => JSON.stringify(accountSettings) !== JSON.stringify(initialAccount),
@@ -364,11 +401,27 @@ export function useSettingsState() {
     };
 
     writePersistedSettings(userId, payload);
-  }, [accountSettings.language, buyerPayment, notificationSettings, privacySettings, profileSettings.displayName, profileSettings.languages, profileSettings.location, profileSettings.skills, profileSettings.username, securitySettings.twoFactorEnabled, sellerPayment, userId]);
+  }, [
+    accountSettings.language,
+    buyerPayment,
+    notificationSettings,
+    privacySettings,
+    profileSettings.displayName,
+    profileSettings.languages,
+    profileSettings.location,
+    profileSettings.skills,
+    profileSettings.username,
+    securitySettings.twoFactorEnabled,
+    sellerPayment,
+    userId,
+  ]);
 
-  const setSectionSaving = useCallback((section: SettingsTab, saving: boolean) => {
-    setSavingBySection((current) => ({ ...current, [section]: saving }));
-  }, []);
+  const setSectionSaving = useCallback(
+    (section: SettingsTab, saving: boolean) => {
+      setSavingBySection((current) => ({ ...current, [section]: saving }));
+    },
+    [],
+  );
 
   const saveProfile = useCallback(async () => {
     if (!userId) {
@@ -415,12 +468,21 @@ export function useSettingsState() {
       toast.success("Profile settings updated.");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to update profile settings.";
+        error instanceof Error
+          ? error.message
+          : "Failed to update profile settings.";
       toast.error(message);
     } finally {
       setSectionSaving("profile", false);
     }
-  }, [persistLocalSettings, profile, profileSettings, refreshProfile, setSectionSaving, userId]);
+  }, [
+    persistLocalSettings,
+    profile,
+    profileSettings,
+    refreshProfile,
+    setSectionSaving,
+    userId,
+  ]);
 
   const saveNotifications = useCallback(async () => {
     setSectionSaving("notifications", true);
@@ -450,44 +512,53 @@ export function useSettingsState() {
     persistLocalSettings();
     toast.success("Payment settings updated.");
     setSectionSaving("payment", false);
-  }, [buyerPayment, persistLocalSettings, role, sellerPayment, setSectionSaving]);
+  }, [
+    buyerPayment,
+    persistLocalSettings,
+    role,
+    sellerPayment,
+    setSectionSaving,
+  ]);
 
   const saveAccount = useCallback(async () => {
     setSectionSaving("account", true);
 
     try {
-      if (!securitySettings.currentPassword.trim()) {
-        toast.error("Current password is required to change email.");
-        return;
-      }
-
       const email = session?.user?.email;
       if (!email) {
         toast.error("Could not verify your current account.");
         return;
       }
 
-      const { error: verifyError } = await supabase.auth.signInWithPassword({
-        email,
-        password: securitySettings.currentPassword,
-      });
-
-      if (verifyError) {
-        toast.error("Current password is incorrect.");
-        return;
-      }
-
       if (accountSettings.email !== email) {
+        if (!securitySettings.currentPassword.trim()) {
+          toast.error("Current password is required to change email.");
+          return;
+        }
+
+        const { error: verifyError } = await supabase.auth.signInWithPassword({
+          email,
+          password: securitySettings.currentPassword,
+        });
+
+        if (verifyError) {
+          toast.error("Current password is incorrect.");
+          return;
+        }
         const { error: emailUpdateError } = await supabase.auth.updateUser({
           email: accountSettings.email,
         });
 
         if (emailUpdateError) {
-          toast.error(emailUpdateError.message || "Failed to request email change.");
+          toast.error(
+            emailUpdateError.message || "Failed to request email change.",
+          );
           return;
         }
 
-        toast.success("Email update requested. Check your inbox for confirmation.");
+        toast.success(
+          "Email update requested. Check your inbox for confirmation.",
+        );
       }
 
       setMode(accountSettings.themeMode);
@@ -498,7 +569,14 @@ export function useSettingsState() {
     } finally {
       setSectionSaving("account", false);
     }
-  }, [accountSettings, persistLocalSettings, securitySettings.currentPassword, session?.user?.email, setMode, setSectionSaving]);
+  }, [
+    accountSettings,
+    persistLocalSettings,
+    securitySettings.currentPassword,
+    session?.user?.email,
+    setMode,
+    setSectionSaving,
+  ]);
 
   const saveSecurity = useCallback(async () => {
     setSectionSaving("security", true);
@@ -516,7 +594,10 @@ export function useSettingsState() {
         Boolean(securitySettings.confirmPassword);
 
       if (wantsPasswordChange) {
-        if (!securitySettings.currentPassword || !securitySettings.newPassword) {
+        if (
+          !securitySettings.currentPassword ||
+          !securitySettings.newPassword
+        ) {
           toast.error("Current password and new password are required.");
           return;
         }
@@ -565,7 +646,12 @@ export function useSettingsState() {
     } finally {
       setSectionSaving("security", false);
     }
-  }, [persistLocalSettings, securitySettings, session?.user?.email, setSectionSaving]);
+  }, [
+    persistLocalSettings,
+    securitySettings,
+    session?.user?.email,
+    setSectionSaving,
+  ]);
 
   const logoutAllDevices = useCallback(async () => {
     setSectionSaving("security", true);
@@ -586,7 +672,9 @@ export function useSettingsState() {
   const removeBlockedUser = useCallback((userToRemoveId: string) => {
     setPrivacySettings((current) => ({
       ...current,
-      blockedUsers: current.blockedUsers.filter((entry) => entry.id !== userToRemoveId),
+      blockedUsers: current.blockedUsers.filter(
+        (entry) => entry.id !== userToRemoveId,
+      ),
     }));
   }, []);
 
@@ -610,7 +698,10 @@ export function useSettingsState() {
           return;
         }
 
-        const { error } = await supabase.from("users").delete().eq("id", userId);
+        const { error } = await supabase
+          .from("users")
+          .delete()
+          .eq("id", userId);
         if (error) {
           toast.error(error.message || "Failed to delete account.");
           return;
@@ -635,10 +726,15 @@ export function useSettingsState() {
     if (score <= 1) return "Low";
     if (score === 2) return "Medium";
     return "High";
-  }, [profileSettings.avatarPreview, profileSettings.bio, securitySettings.twoFactorEnabled]);
+  }, [
+    profileSettings.avatarPreview,
+    profileSettings.bio,
+    securitySettings.twoFactorEnabled,
+  ]);
 
   const activeSessions = useMemo(() => {
-    const createdAt = session?.user?.last_sign_in_at ?? session?.user?.created_at;
+    const createdAt =
+      session?.user?.last_sign_in_at ?? session?.user?.created_at;
     const dateLabel = createdAt
       ? new Date(createdAt).toLocaleString(undefined, {
           month: "short",

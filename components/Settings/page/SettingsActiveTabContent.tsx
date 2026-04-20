@@ -21,6 +21,7 @@ export function SettingsActiveTabContent() {
   if (activeTab === "payment") return <SettingsPaymentSection />;
   if (activeTab === "privacy") return <SettingsPrivacySection />;
   if (activeTab === "account") return <SettingsAccountSection />;
+  if (activeTab === "danger") return <SettingsDangerSection />;
 
-  return <SettingsDangerSection />;
+  return <SettingsProfileSection />;
 }
