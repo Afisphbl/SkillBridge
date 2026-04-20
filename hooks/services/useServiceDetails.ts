@@ -37,7 +37,8 @@ function emit(serviceId: string) {
 }
 
 function subscribe(serviceId: string, listener: () => void) {
-  const listeners = serviceListenersById.get(serviceId) ?? new Set<() => void>();
+  const listeners =
+    serviceListenersById.get(serviceId) ?? new Set<() => void>();
   listeners.add(listener);
   serviceListenersById.set(serviceId, listeners);
 
@@ -57,6 +58,15 @@ function extractServiceId(rawId: string | string[] | undefined) {
   }
 
   return rawId ?? "";
+}
+
+function setServiceState(
+  serviceId: string,
+  patch: Partial<ServiceDetailsState>,
+) {
+  const previous = getOrCreateState(serviceId);
+  serviceStateById.set(serviceId, { ...previous, ...patch });
+  emit(serviceId);
 }
 
 export function useServiceDetails() {
@@ -80,30 +90,36 @@ export function useServiceDetails() {
     const state = getOrCreateState(serviceId);
     if (state.initialized || state.loading) return;
 
-    state.loading = true;
-    state.initialized = true;
-    state.error = null;
-    emit(serviceId);
+    setServiceState(serviceId, {
+      loading: true,
+      initialized: true,
+      error: null,
+    });
 
     void getServiceById(serviceId)
       .then(({ service, error }) => {
         state.loading = false;
         if (error || !service) {
-          state.error = error?.message || "Service not found.";
-          state.service = null;
-          emit(serviceId);
+          setServiceState(serviceId, {
+            loading: false,
+            error: error?.message || "Service not found.",
+            service: null,
+          });
           return;
         }
 
-        state.error = null;
-        state.service = service as ServiceRecord;
-        emit(serviceId);
+        setServiceState(serviceId, {
+          error: null,
+          service: service as ServiceRecord,
+          loading: false,
+        });
       })
       .catch(() => {
-        state.loading = false;
-        state.error = "Failed to load service.";
-        state.service = null;
-        emit(serviceId);
+        setServiceState(serviceId, {
+          loading: false,
+          error: "Failed to load service.",
+          service: null,
+        });
       });
   }, [serviceId]);
 

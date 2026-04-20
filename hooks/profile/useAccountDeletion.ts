@@ -14,10 +14,15 @@ type AccountDeletionState = {
   deletingAccount: boolean;
 };
 
-const accountDeletionState: AccountDeletionState = {
+let accountDeletionState: AccountDeletionState = {
   deleteModalOpen: false,
   deletingAccount: false,
 };
+
+function setDeletionState(patch: Partial<AccountDeletionState>) {
+  accountDeletionState = { ...accountDeletionState, ...patch };
+  emitDeletionChange();
+}
 
 const deletionListeners = new Set<() => void>();
 let latestDeletionOptions: UseAccountDeletionOptions | null = null;
@@ -50,14 +55,12 @@ export function useAccountDeletion({
   }, [onDeleteSuccess, userId]);
 
   const openDeleteModal = useCallback(() => {
-    accountDeletionState.deleteModalOpen = true;
-    emitDeletionChange();
+    setDeletionState({ deleteModalOpen: true });
   }, []);
 
   const closeDeleteModal = useCallback(() => {
     if (!accountDeletionState.deletingAccount) {
-      accountDeletionState.deleteModalOpen = false;
-      emitDeletionChange();
+      setDeletionState({ deleteModalOpen: false });
     }
   }, []);
 
@@ -70,8 +73,7 @@ export function useAccountDeletion({
       return;
     }
 
-    accountDeletionState.deletingAccount = true;
-    emitDeletionChange();
+    setDeletionState({ deletingAccount: true });
     try {
       const { error } = await deleteUser(activeUserId);
       if (error) {
@@ -79,15 +81,13 @@ export function useAccountDeletion({
         return;
       }
 
-      accountDeletionState.deleteModalOpen = false;
-      emitDeletionChange();
+      setDeletionState({ deleteModalOpen: false });
       toast.success("Account deleted successfully.");
       if (onDelete) {
         await onDelete();
       }
     } finally {
-      accountDeletionState.deletingAccount = false;
-      emitDeletionChange();
+      setDeletionState({ deletingAccount: false });
     }
   }, []);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import toast from "react-hot-toast";
 import { updateUser } from "@/services/supabase/userApi";
 import { deleteAvatar, uploadAvatar } from "@/services/supabase/storageApi";
@@ -28,26 +28,14 @@ type ProfileSaveState = {
   profileSaved: boolean;
 };
 
-const profileSaveState: ProfileSaveState = {
+type ProfileSaveStateUpdater =
+  | ProfileSaveState
+  | ((current: ProfileSaveState) => ProfileSaveState);
+
+const INITIAL_PROFILE_SAVE_STATE: ProfileSaveState = {
   savingProfile: false,
   profileSaved: false,
 };
-
-const saveListeners = new Set<() => void>();
-let latestSaveOptions: UseProfileSaveOptions | null = null;
-
-function emitSaveChange() {
-  saveListeners.forEach((listener) => listener());
-}
-
-function subscribe(listener: () => void) {
-  saveListeners.add(listener);
-  return () => saveListeners.delete(listener);
-}
-
-function getSnapshot() {
-  return profileSaveState;
-}
 
 export function useProfileSave({
   userId,
@@ -58,6 +46,35 @@ export function useProfileSave({
   resolveNextAvatar,
   resetAvatarDraft,
 }: Partial<UseProfileSaveOptions> = {}) {
+  const saveOptionsRef = useRef<UseProfileSaveOptions | null>(null);
+  const snapshotRef = useRef<ProfileSaveState>(INITIAL_PROFILE_SAVE_STATE);
+  const listenersRef = useRef(new Set<() => void>());
+
+  const emitSaveChange = useCallback(() => {
+    listenersRef.current.forEach((listener) => listener());
+  }, []);
+
+  const setProfileSaveState = useCallback(
+    (updater: ProfileSaveStateUpdater) => {
+      const nextSnapshot =
+        typeof updater === "function" ? updater(snapshotRef.current) : updater;
+
+      // Replace snapshot reference so useSyncExternalStore sees updates.
+      snapshotRef.current = { ...nextSnapshot };
+      emitSaveChange();
+    },
+    [emitSaveChange],
+  );
+
+  const subscribe = useCallback((listener: () => void) => {
+    listenersRef.current.add(listener);
+    return () => {
+      listenersRef.current.delete(listener);
+    };
+  }, []);
+
+  const getSnapshot = useCallback(() => snapshotRef.current, []);
+
   const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   useEffect(() => {
@@ -69,10 +86,11 @@ export function useProfileSave({
       pendingAvatarFile === undefined ||
       avatarDirty === undefined
     ) {
+      saveOptionsRef.current = null;
       return;
     }
 
-    latestSaveOptions = {
+    saveOptionsRef.current = {
       userId,
       profile,
       refreshProfile,
@@ -91,96 +109,121 @@ export function useProfileSave({
     userId,
   ]);
 
-  const handleSaveProfile = useCallback(async (values: ProfileFormValues) => {
-    if (!latestSaveOptions) {
-      toast.error("Profile save is not ready yet.");
-      return;
-    }
+  useEffect(() => {
+    return () => {
+      saveOptionsRef.current = null;
+    };
+  }, []);
 
-    const {
-      userId,
-      profile,
-      refreshProfile,
-      pendingAvatarFile,
-      avatarDirty,
-      resolveNextAvatar,
-      resetAvatarDraft,
-    } = latestSaveOptions;
-
-    if (!userId) {
-      toast.error("Could not identify your account.");
-      return;
-    }
-
-    profileSaveState.savingProfile = true;
-    profileSaveState.profileSaved = false;
-    emitSaveChange();
-    let uploadedAvatar: string | null = null;
-
-    try {
-      const normalizedRole = (
-        values.role ||
-        profile?.role ||
-        "seller"
-      ).toLowerCase();
-
-      const previousAvatar = profile?.avatar ?? "";
-      let nextAvatar = resolveNextAvatar(previousAvatar);
-
-      if (pendingAvatarFile) {
-        nextAvatar = await uploadAvatar(pendingAvatarFile, userId);
-        uploadedAvatar = nextAvatar;
-      }
-
-      const { error } = await updateUser(userId, {
-        full_name: values.fullName.trim(),
-        role: normalizedRole,
-        avatar: nextAvatar,
-        bio: values.bio.trim(),
-      });
-
-      if (error) {
-        toast.error(error.message || "Failed to save profile changes.");
-        if (uploadedAvatar) {
-          await deleteAvatar(uploadedAvatar).catch(() => {});
-        }
+  const handleSaveProfile = useCallback(
+    async (values: ProfileFormValues) => {
+      if (!saveOptionsRef.current) {
+        toast.error("Profile save is not ready yet.");
         return;
       }
 
-      if (avatarDirty && previousAvatar && previousAvatar !== nextAvatar) {
-        await deleteAvatar(previousAvatar).catch(() => {});
+      const {
+        userId,
+        profile,
+        refreshProfile,
+        pendingAvatarFile,
+        avatarDirty,
+        resolveNextAvatar,
+        resetAvatarDraft,
+      } = saveOptionsRef.current;
+
+      if (!userId) {
+        toast.error("Could not identify your account.");
+        return;
       }
 
-      await refreshProfile();
-      resetAvatarDraft();
-      profileSaveState.profileSaved = true;
-      emitSaveChange();
-      window.dispatchEvent(new CustomEvent("skillbridge:user-updated"));
-      toast.success("Profile changes saved.");
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to save profile changes.";
-      toast.error(message);
-      if (uploadedAvatar) {
-        await deleteAvatar(uploadedAvatar).catch(() => {});
+      setProfileSaveState((current) => ({
+        ...current,
+        savingProfile: true,
+        profileSaved: false,
+      }));
+      let uploadedAvatar: string | null = null;
+
+      try {
+        const normalizedRole = (
+          values.role ||
+          profile?.role ||
+          "seller"
+        ).toLowerCase();
+
+        const previousAvatar = profile?.avatar ?? "";
+        let nextAvatar = resolveNextAvatar(previousAvatar);
+
+        if (pendingAvatarFile) {
+          nextAvatar = await uploadAvatar(pendingAvatarFile, userId);
+          uploadedAvatar = nextAvatar;
+        }
+
+        const { error } = await updateUser(userId, {
+          full_name: values.fullName.trim(),
+          role: normalizedRole,
+          avatar: nextAvatar,
+          bio: values.bio.trim(),
+        });
+
+        if (error) {
+          toast.error(error.message || "Failed to save profile changes.");
+          if (uploadedAvatar) {
+            await deleteAvatar(uploadedAvatar).catch(() => {});
+          }
+          return;
+        }
+
+        if (avatarDirty && previousAvatar && previousAvatar !== nextAvatar) {
+          await deleteAvatar(previousAvatar).catch(() => {});
+        }
+
+        await refreshProfile();
+        resetAvatarDraft();
+        setProfileSaveState((current) => ({
+          ...current,
+          profileSaved: true,
+        }));
+        window.dispatchEvent(new CustomEvent("skillbridge:user-updated"));
+        toast.success("Profile changes saved.");
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Failed to save profile changes.";
+        toast.error(message);
+        if (uploadedAvatar) {
+          await deleteAvatar(uploadedAvatar).catch(() => {});
+        }
+      } finally {
+        setProfileSaveState((current) => ({
+          ...current,
+          savingProfile: false,
+        }));
       }
-    } finally {
-      profileSaveState.savingProfile = false;
-      emitSaveChange();
-    }
-  }, []);
+    },
+    [setProfileSaveState],
+  );
 
   const handleCancelEdit = useCallback(() => {
-    if (!latestSaveOptions) {
+    if (!saveOptionsRef.current) {
+      setProfileSaveState((current) => ({
+        ...current,
+        savingProfile: false,
+        profileSaved: false,
+      }));
       toast("Changes reset.");
       return;
     }
 
-    profileSaveState.profileSaved = false;
-    latestSaveOptions.resetAvatarDraft();
-    emitSaveChange();
+    setProfileSaveState((current) => ({
+      ...current,
+      savingProfile: false,
+      profileSaved: false,
+    }));
+    saveOptionsRef.current.resetAvatarDraft();
     toast("Changes reset.");
-  }, []);
+  }, [setProfileSaveState]);
 
   return {
     savingProfile: state.savingProfile,

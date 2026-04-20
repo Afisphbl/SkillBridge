@@ -15,15 +15,19 @@ type AvatarDraftState = {
   avatarDirty: boolean;
 };
 
-const avatarDraftState: AvatarDraftState = {
-  avatarUrl: undefined,
-  avatarPreview: null,
-  avatarUploading: false,
-  avatarUploadError: null,
-  avatarUploadSuccess: false,
-  pendingAvatarFile: null,
-  avatarDirty: false,
-};
+function createInitialAvatarDraftState(): AvatarDraftState {
+  return {
+    avatarUrl: undefined,
+    avatarPreview: null,
+    avatarUploading: false,
+    avatarUploadError: null,
+    avatarUploadSuccess: false,
+    pendingAvatarFile: null,
+    avatarDirty: false,
+  };
+}
+
+let avatarDraftState: AvatarDraftState = createInitialAvatarDraftState();
 
 const listeners = new Set<() => void>();
 
@@ -31,9 +35,26 @@ function emitChange() {
   listeners.forEach((listener) => listener());
 }
 
+function setAvatarDraftState(
+  updater: AvatarDraftState | ((current: AvatarDraftState) => AvatarDraftState),
+) {
+  avatarDraftState =
+    typeof updater === "function" ? updater(avatarDraftState) : updater;
+  emitChange();
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+
+  return () => {
+    listeners.delete(listener);
+
+    // Reset singleton state when profile consumers unmount so draft data
+    // does not leak into the next mount/session.
+    if (listeners.size === 0) {
+      avatarDraftState = createInitialAvatarDraftState();
+    }
+  };
 }
 
 function getSnapshot() {
@@ -55,23 +76,29 @@ export function useAvatarDraft({ currentAvatar }: UseAvatarDraftOptions) {
 
   const handleAvatarUpload = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      avatarDraftState.avatarUploadError = "Please select a valid image file.";
-      avatarDraftState.avatarUploadSuccess = false;
-      emitChange();
+      setAvatarDraftState((current) => ({
+        ...current,
+        avatarUploadError: "Please select a valid image file.",
+        avatarUploadSuccess: false,
+      }));
       return;
     }
 
     if (file.size > MAX_AVATAR_SIZE) {
-      avatarDraftState.avatarUploadError = "File too large. Max size is 2MB.";
-      avatarDraftState.avatarUploadSuccess = false;
-      emitChange();
+      setAvatarDraftState((current) => ({
+        ...current,
+        avatarUploadError: "File too large. Max size is 2MB.",
+        avatarUploadSuccess: false,
+      }));
       return;
     }
 
-    avatarDraftState.avatarUploading = true;
-    avatarDraftState.avatarUploadError = null;
-    avatarDraftState.avatarUploadSuccess = false;
-    emitChange();
+    setAvatarDraftState((current) => ({
+      ...current,
+      avatarUploading: true,
+      avatarUploadError: null,
+      avatarUploadSuccess: false,
+    }));
 
     try {
       const previewUrl = await new Promise<string>((resolve, reject) => {
@@ -81,52 +108,64 @@ export function useAvatarDraft({ currentAvatar }: UseAvatarDraftOptions) {
         reader.readAsDataURL(file);
       });
 
-      avatarDraftState.avatarPreview = previewUrl;
-      avatarDraftState.pendingAvatarFile = file;
-      avatarDraftState.avatarUrl = undefined;
-      avatarDraftState.avatarDirty = true;
-      avatarDraftState.avatarUploadSuccess = true;
-      emitChange();
+      setAvatarDraftState((current) => ({
+        ...current,
+        avatarPreview: previewUrl,
+        pendingAvatarFile: file,
+        avatarUrl: undefined,
+        avatarDirty: true,
+        avatarUploadSuccess: true,
+      }));
       toast.success("Avatar selected. Click Save Changes to apply.");
     } catch {
-      avatarDraftState.avatarPreview = null;
-      avatarDraftState.avatarUploadError =
-        "Unable to upload this image. Try another file.";
-      avatarDraftState.avatarUploadSuccess = false;
-      emitChange();
+      setAvatarDraftState((current) => ({
+        ...current,
+        avatarPreview: null,
+        avatarUploadError: "Unable to upload this image. Try another file.",
+        avatarUploadSuccess: false,
+      }));
       toast.error("Unable to read this image file.");
     } finally {
-      avatarDraftState.avatarUploading = false;
-      emitChange();
+      setAvatarDraftState((current) => ({
+        ...current,
+        avatarUploading: false,
+      }));
     }
   }, []);
 
   const handleAvatarRemove = useCallback(() => {
-    avatarDraftState.avatarUploadError = null;
-    avatarDraftState.pendingAvatarFile = null;
-    avatarDraftState.avatarUrl = null;
-    avatarDraftState.avatarPreview = null;
-    avatarDraftState.avatarDirty = true;
-    avatarDraftState.avatarUploadSuccess = true;
-    emitChange();
+    setAvatarDraftState((current) => ({
+      ...current,
+      avatarUploadError: null,
+      pendingAvatarFile: null,
+      avatarUrl: null,
+      avatarPreview: null,
+      avatarDirty: true,
+      avatarUploadSuccess: true,
+    }));
     toast("Avatar removal staged. Click Save Changes to apply.");
   }, []);
 
   const resetAvatarDraft = useCallback(() => {
-    avatarDraftState.avatarUrl = undefined;
-    avatarDraftState.avatarPreview = null;
-    avatarDraftState.pendingAvatarFile = null;
-    avatarDraftState.avatarDirty = false;
-    avatarDraftState.avatarUploadSuccess = false;
-    avatarDraftState.avatarUploadError = null;
-    emitChange();
+    setAvatarDraftState((current) => ({
+      ...current,
+      avatarUrl: undefined,
+      avatarPreview: null,
+      pendingAvatarFile: null,
+      avatarDirty: false,
+      avatarUploadSuccess: false,
+      avatarUploadError: null,
+    }));
   }, []);
 
-  const resolveNextAvatar = useCallback((previousAvatar: string) => {
-    return avatarDraftState.avatarUrl === undefined
-      ? previousAvatar
-      : (avatarDraftState.avatarUrl ?? "");
-  }, []);
+  const resolveNextAvatar = useCallback(
+    (previousAvatar: string) => {
+      return draft.avatarUrl === undefined
+        ? previousAvatar
+        : (draft.avatarUrl ?? "");
+    },
+    [draft.avatarUrl],
+  );
 
   return {
     avatarUploading: draft.avatarUploading,

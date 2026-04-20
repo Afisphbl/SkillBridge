@@ -122,13 +122,14 @@ export default function Navbar({ onMenuToggle }: { onMenuToggle: () => void }) {
             )}
           </div>
 
-          <button
+          <Link
+            href="/profile"
+            aria-label="Profile"
             type="button"
             className="grid size-8 place-items-center rounded-md text-(--color-primary) hover:bg-(--hover-bg)"
-            aria-label="Profile"
           >
             <FiUser className="size-4" />
-          </button>
+          </Link>
           <button
             type="button"
             className="grid size-8 place-items-center rounded-md text-(--color-primary) hover:bg-(--hover-bg)"

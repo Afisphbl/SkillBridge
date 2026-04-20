@@ -265,7 +265,6 @@ export default function OrderFormModal() {
         success = createResult.success;
         order = createResult.order || null;
       }
-      console.log("Submitting order with values:", values);
 
       if (!success || !order) {
         throw new Error("Order creation failed.");

@@ -66,6 +66,10 @@ function toErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function formatMoneyValue(value: number | null | undefined) {
+  return typeof value === "number" ? formatPrice(value) : "-";
+}
+
 export default function OrderDetailsPage() {
   const params = useParams<{ id: string }>();
   const orderId = useMemo(() => params?.id ?? "", [params]);
@@ -96,7 +100,8 @@ export default function OrderDetailsPage() {
           throw new Error("Please login to view this order.");
         }
 
-        const { order: orderData, error: orderError } = await getOrderById(orderId);
+        const { order: orderData, error: orderError } =
+          await getOrderById(orderId);
         if (orderError || !orderData) {
           throw new Error("Order not found.");
         }
@@ -118,10 +123,14 @@ export default function OrderDetailsPage() {
         if (!cancelled) {
           setOrder(typedOrder);
           setBuyerName(
-            buyerResult.data?.full_name || buyerResult.data?.email || typedOrder.buyer_id,
+            buyerResult.data?.full_name ||
+              buyerResult.data?.email ||
+              typedOrder.buyer_id,
           );
           setSellerName(
-            sellerResult.data?.full_name || sellerResult.data?.email || typedOrder.seller_id,
+            sellerResult.data?.full_name ||
+              sellerResult.data?.email ||
+              typedOrder.seller_id,
           );
           setServiceName(serviceResult.service?.title || typedOrder.service_id);
         }
@@ -168,7 +177,9 @@ export default function OrderDetailsPage() {
   if (!order) {
     return (
       <section className="rounded-3xl border border-(--border-color) bg-(--bg-card) p-6 text-center shadow-sm">
-        <h1 className="text-lg font-bold text-(--color-danger)">Failed to load order</h1>
+        <h1 className="text-lg font-bold text-(--color-danger)">
+          Failed to load order
+        </h1>
         <p className="mt-2 text-sm text-(--text-secondary)">
           {errorMessage || "Something went wrong while loading order details."}
         </p>
@@ -233,16 +244,31 @@ export default function OrderDetailsPage() {
           <DetailCard label="Buyer" value={buyerName} />
           <DetailCard label="Seller" value={sellerName} />
           <DetailCard label="Status" value={order.status} />
-          <DetailCard label="Price" value={formatPrice(order.price ?? 0)} />
-          <DetailCard label="Platform fee" value={formatPrice(order.platform_fee ?? 0)} />
+          <DetailCard label="Price" value={formatMoneyValue(order.price)} />
+          <DetailCard
+            label="Platform fee"
+            value={formatMoneyValue(order.platform_fee)}
+          />
           <DetailCard
             label="Seller earnings"
-            value={formatPrice(order.seller_earnings ?? 0)}
+            value={formatMoneyValue(order.seller_earnings)}
           />
-          <DetailCard label="Delivery date" value={formatDate(order.delivery_date)} />
-          <DetailCard label="Created date" value={formatDate(order.created_at)} />
-          <DetailCard label="Delivered date" value={formatDate(order.delivered_at)} />
-          <DetailCard label="Completed date" value={formatDate(order.completed_at)} />
+          <DetailCard
+            label="Delivery date"
+            value={formatDate(order.delivery_date)}
+          />
+          <DetailCard
+            label="Created date"
+            value={formatDate(order.created_at)}
+          />
+          <DetailCard
+            label="Delivered date"
+            value={formatDate(order.delivered_at)}
+          />
+          <DetailCard
+            label="Completed date"
+            value={formatDate(order.completed_at)}
+          />
           <DetailCard
             label="Cancellation reason"
             value={order.cancellation_reason || "-"}

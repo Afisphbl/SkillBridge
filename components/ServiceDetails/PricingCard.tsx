@@ -4,14 +4,22 @@ import { useState } from "react";
 import { FiHeart } from "react-icons/fi";
 import OrderNowButton from "@/components/Order/OrderNowButton";
 import { useServiceDetails } from "@/hooks/services/useServiceDetails";
+import { toNumber } from "@/hooks/services/types";
 import { formatDelivery, formatPrice } from "@/utils/format";
 
 export default function PricingCard() {
-  const { service } = useServiceDetails();
+  const { service, loading, error } = useServiceDetails();
   const title = service?.title || "Service";
-  const price = service?.price ?? service?.base_price ?? service?.hourly_rate ?? 0;
-  const deliveryDays = service?.delivery_days ?? service?.delivery_time ?? 1;
+  const price = toNumber(
+    service?.price ?? service?.base_price ?? service?.hourly_rate,
+    0,
+  );
+  const deliveryDays = toNumber(
+    service?.delivery_days ?? service?.delivery_time,
+    1,
+  );
   const summary = service?.description;
+  const canOrder = Boolean(service && !loading && !error);
 
   const [saved, setSaved] = useState(false);
 
@@ -34,8 +42,17 @@ export default function PricingCard() {
         {summary || title}
       </p>
 
-      <OrderNowButton className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-(--color-primary) px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70" />
-
+      {canOrder ? (
+        <OrderNowButton className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-(--color-primary) px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70" />
+      ) : (
+        <button
+          type="button"
+          disabled
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-(--color-primary) px-4 text-sm font-semibold text-white opacity-70 disabled:cursor-not-allowed"
+        >
+          {loading ? "Loading service..." : "Service unavailable"}
+        </button>
+      )}
       <button
         type="button"
         onClick={() => setSaved((value) => !value)}
