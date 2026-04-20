@@ -1,8 +1,6 @@
-type ServiceDescriptionProps = {
-  description?: string;
-  tags?: unknown;
-  features?: unknown;
-};
+"use client";
+
+import { useServiceDetails } from "@/hooks/services/useServiceDetails";
 
 function normalizeTags(tags: unknown): string[] {
   if (Array.isArray(tags)) {
@@ -39,11 +37,12 @@ function normalizeFeatures(features: unknown): string[] {
   return [];
 }
 
-export default function ServiceDescription({
-  description,
-  tags,
-  features,
-}: ServiceDescriptionProps) {
+export default function ServiceDescription() {
+  const { service } = useServiceDetails();
+  const description = service?.description;
+  const tags = service?.tags;
+  const features = service?.features;
+
   const normalizedTags = normalizeTags(tags);
   const normalizedFeatures = normalizeFeatures(features);
 

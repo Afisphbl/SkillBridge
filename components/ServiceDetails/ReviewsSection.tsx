@@ -1,31 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import { FiStar } from "react-icons/fi";
-
-type ReviewItem = {
-  id?: string;
-  user_name?: string;
-  user_avatar?: string;
-  rating?: number | string;
-  comment?: string;
-  created_at?: string;
-};
-
-type ReviewsSectionProps = {
-  reviews?: ReviewItem[];
-  averageRating: number;
-  totalReviews: number;
-};
+import { useServiceReviews } from "@/hooks/services/useServiceReviews";
 
 function toNumber(value: unknown, fallback = 0) {
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : fallback;
 }
 
-export default function ReviewsSection({
-  reviews = [],
-  averageRating,
-  totalReviews,
-}: ReviewsSectionProps) {
+export default function ReviewsSection() {
+  const { reviews, averageRating, totalReviews } = useServiceReviews();
+
   return (
     <section className="space-y-4 rounded-2xl border border-(--border-color) bg-(--bg-card) p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">

@@ -1,21 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import { FiClock, FiMessageSquare, FiShield } from "react-icons/fi";
+import { useSellerProfile } from "@/hooks/services/useSellerProfile";
 
-type SellerCardProps = {
-  fullName?: string;
-  avatar?: string;
-  role?: string;
-  bio?: string;
-  responseTime?: string;
-};
+export default function SellerCard() {
+  const { seller } = useSellerProfile();
+  const fullName = seller?.full_name || seller?.email;
+  const avatar = seller?.avatar;
+  const role = seller?.role;
+  const bio = seller?.bio;
+  const responseTime = seller?.response_time;
 
-export default function SellerCard({
-  fullName,
-  avatar,
-  role,
-  bio,
-  responseTime,
-}: SellerCardProps) {
   const sellerName = fullName || "Seller";
 
   return (
