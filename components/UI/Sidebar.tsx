@@ -16,9 +16,11 @@ import {
 import { cn } from "@/utils/helpers";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
+import { LuLayoutDashboard } from "react-icons/lu";
 
 const primaryLinks = [
   { href: "/home", label: "Home", icon: FiHome },
+  { href: "/dashboard", label: "Dashboard", icon: LuLayoutDashboard },
   { href: "/services", label: "Services", icon: FiBriefcase },
   { href: "/orders", label: "My Orders", icon: FiPackage },
   { href: "/messages", label: "Messages", icon: FiMessageSquare },

@@ -10,14 +10,18 @@ import {
 } from "react";
 
 type Theme = "light" | "dark";
+type ThemeMode = Theme | "system";
 
 type ThemeContextValue = {
   theme: Theme;
+  mode: ThemeMode;
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
+  setMode: (mode: ThemeMode) => void;
 };
 
 const THEME_STORAGE_KEY = "skillbridge-theme";
+const THEME_MODE_STORAGE_KEY = "skillbridge-theme-mode";
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
@@ -27,6 +31,17 @@ function getStoredTheme(): Theme | null {
   return stored === "dark" || stored === "light" ? stored : null;
 }
 
+function getStoredMode(): ThemeMode | null {
+  if (typeof window === "undefined") return null;
+  const stored = window.localStorage.getItem(THEME_MODE_STORAGE_KEY);
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    return stored;
+  }
+
+  const storedTheme = getStoredTheme();
+  return storedTheme ?? null;
+}
+
 function getDeviceTheme(): Theme {
   if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -34,8 +49,8 @@ function getDeviceTheme(): Theme {
     : "light";
 }
 
-function getInitialTheme(): Theme {
-  return getStoredTheme() || getDeviceTheme();
+function getInitialMode(): ThemeMode {
+  return getStoredMode() || "system";
 }
 
 function applyThemeToDocument(theme: Theme) {
@@ -44,28 +59,31 @@ function applyThemeToDocument(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
-  const [hasUserPreference, setHasUserPreference] = useState<boolean>(() =>
-    Boolean(getStoredTheme()),
-  );
+  const [mode, setModeState] = useState<ThemeMode>(getInitialMode);
+  const [systemTheme, setSystemTheme] = useState<Theme>(getDeviceTheme);
+
+  const theme: Theme = mode === "system" ? systemTheme : mode;
 
   useEffect(() => {
     applyThemeToDocument(theme);
 
-    if (hasUserPreference) {
+    if (mode === "system") {
+      window.localStorage.removeItem(THEME_STORAGE_KEY);
+    } else {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     }
-  }, [theme, hasUserPreference]);
+
+    window.localStorage.setItem(THEME_MODE_STORAGE_KEY, mode);
+  }, [mode, theme]);
 
   useEffect(() => {
-    if (hasUserPreference) return;
+    if (mode !== "system") return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
     const handleThemeChange = (event: MediaQueryListEvent) => {
       const nextTheme: Theme = event.matches ? "dark" : "light";
-      setThemeState(nextTheme);
-      applyThemeToDocument(nextTheme);
+      setSystemTheme(nextTheme);
     };
 
     mediaQuery.addEventListener("change", handleThemeChange);
@@ -73,22 +91,27 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mediaQuery.removeEventListener("change", handleThemeChange);
     };
-  }, [hasUserPreference]);
+  }, [mode]);
 
   const setTheme = useCallback((nextTheme: Theme) => {
-    setHasUserPreference(true);
-    setThemeState(nextTheme);
-    applyThemeToDocument(nextTheme);
-    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    setModeState(nextTheme);
+  }, []);
+
+  const setMode = useCallback((nextMode: ThemeMode) => {
+    setModeState(nextMode);
+    if (nextMode === "system") {
+      setSystemTheme(getDeviceTheme());
+    }
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
   }, [theme, setTheme]);
 
   const value = useMemo(
-    () => ({ theme, toggleTheme, setTheme }),
-    [theme, toggleTheme, setTheme],
+    () => ({ theme, mode, toggleTheme, setTheme, setMode }),
+    [mode, setMode, setTheme, theme, toggleTheme],
   );
 
   return (
