@@ -114,6 +114,7 @@ export default function ServiceCard({ service }: { service: ServiceRecord }) {
           alt={view.title}
           fill
           unoptimized
+          loading="eager"
           className="object-cover transition duration-300 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
@@ -154,6 +155,7 @@ export default function ServiceCard({ service }: { service: ServiceRecord }) {
                 width={28}
                 height={28}
                 unoptimized
+                loading="eager"
                 className="size-7 rounded-full object-cover"
               />
             ) : (

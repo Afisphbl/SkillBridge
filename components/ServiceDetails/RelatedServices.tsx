@@ -1,17 +1,14 @@
+"use client";
+
 import ServiceCard from "@/components/Services/ServiceCard";
+import { useRelatedServices } from "@/hooks/services/useRelatedServices";
+import { useServiceDetails } from "@/hooks/services/useServiceDetails";
 
-type ServiceRecord = {
-  id?: string;
-  [key: string]: unknown;
-};
+export default function RelatedServices() {
+  const { services } = useRelatedServices();
+  const { service } = useServiceDetails();
+  const currentServiceId = String(service?.id || "");
 
-export default function RelatedServices({
-  services,
-  currentServiceId,
-}: {
-  services: ServiceRecord[];
-  currentServiceId?: string;
-}) {
   const filtered = services
     .filter(
       (service) => String(service.id || "") !== String(currentServiceId || ""),

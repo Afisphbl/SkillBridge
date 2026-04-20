@@ -3,12 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { FiX } from "react-icons/fi";
-
-type ServiceGalleryProps = {
-  title: string;
-  thumbnail?: string;
-  galleryImages?: unknown;
-};
+import { useServiceDetails } from "@/hooks/services/useServiceDetails";
 
 function normalizeImages(thumbnail?: string, galleryImages?: unknown) {
   const thumb = typeof thumbnail === "string" ? thumbnail.trim() : "";
@@ -38,11 +33,13 @@ function normalizeImages(thumbnail?: string, galleryImages?: unknown) {
   return ["/SkillBridge.png"];
 }
 
-export default function ServiceGallery({
-  title,
-  thumbnail,
-  galleryImages,
-}: ServiceGalleryProps) {
+export default function ServiceGallery() {
+  const { service } = useServiceDetails();
+  const title = service?.title || "Service";
+  const thumbnail =
+    service?.thumbnail_url || service?.image_url || service?.cover_image;
+  const galleryImages = service?.gallery_urls ?? service?.gallery_images;
+
   const images = useMemo(
     () => normalizeImages(thumbnail, galleryImages),
     [galleryImages, thumbnail],
@@ -61,6 +58,8 @@ export default function ServiceGallery({
         <button
           type="button"
           onClick={() => setLightboxOpen(true)}
+          aria-label="Open gallery image preview"
+          title="Open gallery image preview"
           className="relative block h-72 w-full overflow-hidden rounded-xl bg-(--bg-secondary) md:h-96"
         >
           <Image
@@ -84,6 +83,8 @@ export default function ServiceGallery({
                   key={`${image}-${index}`}
                   type="button"
                   onClick={() => setSelectedImage(image)}
+                  aria-label={`Show gallery image ${index + 1}`}
+                  title={`Show gallery image ${index + 1}`}
                   className={
                     active
                       ? "relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-(--color-primary) opacity-100 ring-2 ring-(--color-primary)"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ChangeEvent, type RefObject } from "react";
+import { type ChangeEvent } from "react";
 import Image from "next/image";
 import {
   FiCheckCircle,
@@ -10,37 +10,32 @@ import {
   FiXCircle,
 } from "react-icons/fi";
 import Loader from "@/components/UI/Loader";
+import { useUser } from "@/hooks/useUser";
+import { useAvatarDraft } from "@/hooks/profile/useAvatarDraft";
+import { useProfileSave } from "@/hooks/profile/useProfileSave";
 
-type AvatarUploaderProps = {
-  avatarUrl: string | null;
-  uploading: boolean;
-  uploadError: string | null;
-  uploadSuccess: boolean;
-  onUpload: (file: File) => void;
-  onRemove: () => void;
-  externalInputRef?: RefObject<HTMLInputElement | null>;
-};
+export default function AvatarUploader() {
+  const { profile } = useUser();
+  const {
+    resolvedAvatarUrl,
+    avatarUploading,
+    avatarUploadError,
+    avatarUploadSuccess,
+    handleAvatarUpload,
+    handleAvatarRemove,
+  } = useAvatarDraft({ currentAvatar: profile?.avatar });
+  const { savingProfile } = useProfileSave();
 
-export default function AvatarUploader({
-  avatarUrl,
-  uploading,
-  uploadError,
-  uploadSuccess,
-  onUpload,
-  onRemove,
-  externalInputRef,
-}: AvatarUploaderProps) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const activeInputRef = externalInputRef ?? inputRef;
+  const uploading = avatarUploading || savingProfile;
 
   const openPicker = () => {
     if (uploading) return;
-    activeInputRef.current?.click();
+    document.getElementById("profile-avatar-input")?.click();
   };
 
   const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) onUpload(file);
+    if (file) handleAvatarUpload(file);
     event.target.value = "";
   };
 
@@ -59,9 +54,9 @@ export default function AvatarUploader({
 
       <div className="mt-5 flex flex-col items-center gap-4 rounded-xl border border-dashed border-(--border-color) bg-(--bg-secondary) px-4 py-5">
         <div className="group relative size-28 overflow-hidden rounded-full border-2 border-(--border-color) bg-(--bg-card) shadow-sm transition-transform duration-200 hover:scale-[1.02]">
-          {avatarUrl ? (
+          {resolvedAvatarUrl ? (
             <Image
-              src={avatarUrl}
+              src={resolvedAvatarUrl}
               alt="Current profile image"
               fill
               unoptimized
@@ -78,7 +73,7 @@ export default function AvatarUploader({
             onClick={openPicker}
             className="absolute inset-0 grid place-items-center bg-slate-900/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100"
             aria-label={
-              avatarUrl ? "Replace avatar image" : "Upload avatar image"
+              resolvedAvatarUrl ? "Replace avatar image" : "Upload avatar image"
             }
           >
             <FiUpload className="size-5 text-white" />
@@ -97,7 +92,7 @@ export default function AvatarUploader({
                 <Loader className="border-white/35 border-t-white" />
                 Uploading
               </>
-            ) : avatarUrl ? (
+            ) : resolvedAvatarUrl ? (
               <>
                 <FiUpload className="size-4" /> Replace
               </>
@@ -110,8 +105,8 @@ export default function AvatarUploader({
 
           <button
             type="button"
-            onClick={onRemove}
-            disabled={!avatarUrl || uploading}
+            onClick={handleAvatarRemove}
+            disabled={!resolvedAvatarUrl || uploading}
             className="inline-flex items-center gap-2 rounded-lg border border-(--border-color) bg-(--btn-bg-secondary) px-3 py-2 text-sm font-semibold text-(--btn-text-secondary) hover:bg-(--btn-bg-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus) disabled:cursor-not-allowed disabled:opacity-50"
           >
             <FiTrash2 className="size-4" /> Remove
@@ -119,7 +114,7 @@ export default function AvatarUploader({
         </div>
 
         <input
-          ref={activeInputRef}
+          id="profile-avatar-input"
           type="file"
           accept="image/*"
           className="hidden"
@@ -128,16 +123,16 @@ export default function AvatarUploader({
           onChange={handleFileSelect}
         />
 
-        {uploadSuccess ? (
+        {avatarUploadSuccess ? (
           <p className="inline-flex items-center gap-1 text-xs font-medium text-(--color-success)">
             <FiCheckCircle className="size-4" /> Avatar change staged. Save
             profile to apply.
           </p>
         ) : null}
 
-        {uploadError ? (
+        {avatarUploadError ? (
           <p className="inline-flex items-center gap-1 text-xs font-medium text-(--color-danger)">
-            <FiXCircle className="size-4" /> {uploadError}
+            <FiXCircle className="size-4" /> {avatarUploadError}
           </p>
         ) : null}
       </div>

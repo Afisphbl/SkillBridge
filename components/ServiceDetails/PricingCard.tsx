@@ -3,21 +3,16 @@
 import { useState } from "react";
 import { FiHeart } from "react-icons/fi";
 import OrderNowButton from "@/components/Order/OrderNowButton";
+import { useServiceDetails } from "@/hooks/services/useServiceDetails";
 import { formatDelivery, formatPrice } from "@/utils/format";
 
-type PricingCardProps = {
-  title: string;
-  price: number | string;
-  deliveryDays: number | string;
-  summary?: string;
-};
+export default function PricingCard() {
+  const { service } = useServiceDetails();
+  const title = service?.title || "Service";
+  const price = service?.price ?? service?.base_price ?? service?.hourly_rate ?? 0;
+  const deliveryDays = service?.delivery_days ?? service?.delivery_time ?? 1;
+  const summary = service?.description;
 
-export default function PricingCard({
-  title,
-  price,
-  deliveryDays,
-  summary,
-}: PricingCardProps) {
   const [saved, setSaved] = useState(false);
 
   return (

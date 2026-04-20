@@ -3,32 +3,33 @@
 import { useEffect } from "react";
 import { FiAlertTriangle } from "react-icons/fi";
 import Loader from "@/components/UI/Loader";
+import { useAuth } from "@/hooks/useAuth";
+import { useAccountDeletion } from "@/hooks/profile/useAccountDeletion";
 
-type DeleteAccountModalProps = {
-  open: boolean;
-  deleting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
+export default function DeleteAccountModal() {
+  const { session, handleSignOut } = useAuth();
+  const {
+    deleteModalOpen,
+    deletingAccount,
+    closeDeleteModal,
+    handleDeleteAccount,
+  } = useAccountDeletion({
+    userId: session?.user?.id,
+    onDeleteSuccess: handleSignOut,
+  });
 
-export default function DeleteAccountModal({
-  open,
-  deleting,
-  onClose,
-  onConfirm,
-}: DeleteAccountModalProps) {
   useEffect(() => {
-    if (!open) return;
+    if (!deleteModalOpen) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !deleting) onClose();
+      if (event.key === "Escape" && !deletingAccount) closeDeleteModal();
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, deleting, onClose]);
+  }, [deleteModalOpen, deletingAccount, closeDeleteModal]);
 
-  if (!open) return null;
+  if (!deleteModalOpen) return null;
 
   return (
     <div
@@ -37,7 +38,7 @@ export default function DeleteAccountModal({
       aria-modal="true"
       aria-labelledby="delete-account-title"
       aria-describedby="delete-account-description"
-      onClick={onClose}
+      onClick={closeDeleteModal}
     >
       <div
         className="modal-pop w-md max-w-full rounded-2xl border border-(--border-color) bg-(--modal-bg) p-6 shadow-xl"
@@ -63,8 +64,8 @@ export default function DeleteAccountModal({
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             type="button"
-            onClick={onClose}
-            disabled={deleting}
+            onClick={closeDeleteModal}
+            disabled={deletingAccount}
             className="inline-flex min-w-24 items-center justify-center rounded-lg border border-(--border-color) bg-(--btn-bg-secondary) px-4 py-2 text-sm font-semibold text-(--btn-text-secondary) hover:bg-(--btn-bg-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus) disabled:cursor-not-allowed disabled:opacity-60"
           >
             Cancel
@@ -72,11 +73,11 @@ export default function DeleteAccountModal({
 
           <button
             type="button"
-            onClick={onConfirm}
-            disabled={deleting}
+            onClick={handleDeleteAccount}
+            disabled={deletingAccount}
             className="inline-flex min-w-24 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {deleting ? (
+            {deletingAccount ? (
               <>
                 <Loader className="border-white/35 border-t-white" /> Deleting
               </>

@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { FiBriefcase, FiLock, FiShield, FiX } from "react-icons/fi";
 import Loader from "@/components/UI/Loader";
+import { useOrderFormState } from "@/hooks/orders/useOrderFormState";
+import { useServiceDetails } from "@/hooks/services/useServiceDetails";
+import { useSellerProfile } from "@/hooks/services/useSellerProfile";
 import { getCurrentUser } from "@/services/supabase/auth";
 import {
   createOrder,
@@ -22,17 +25,6 @@ const EMPTY_FORM_VALUES: OrderFormValues = {
   deliveryDate: "",
   additionalNotes: "",
   attachments: [],
-};
-
-type OrderFormModalProps = {
-  open: boolean;
-  title: string;
-  sellerName?: string;
-  thumbnail?: string;
-  summary?: string;
-  price: number | string;
-  serviceId: string;
-  sellerId: string;
 };
 
 type ExistingOrder = {
@@ -73,16 +65,24 @@ function normalizeAttachments(files: File[]) {
   }));
 }
 
-export default function OrderFormModal({
-  open,
-  title,
-  sellerName,
-  thumbnail,
-  summary,
-  price,
-  serviceId,
-  sellerId,
-}: OrderFormModalProps) {
+export default function OrderFormModal() {
+  const { isOpen: open, closeOrderForm } = useOrderFormState();
+  const { service } = useServiceDetails();
+  const { seller } = useSellerProfile();
+
+  const title = service?.title || "Service";
+  const sellerName = seller?.full_name || seller?.email;
+  const thumbnail =
+    service?.thumbnail_url ||
+    service?.image_url ||
+    service?.cover_image ||
+    undefined;
+  const summary = service?.description;
+  const price =
+    service?.price ?? service?.base_price ?? service?.hourly_rate ?? 0;
+  const serviceId = String(service?.id || "");
+  const sellerId = String(service?.seller_id || "");
+
   const router = useRouter();
   const pathname = usePathname();
   const [existingOrder, setExistingOrder] = useState<ExistingOrder | null>(
@@ -102,14 +102,10 @@ export default function OrderFormModal({
     defaultValues: EMPTY_FORM_VALUES,
   });
 
-  const searchParams = useSearchParams();
   const closeModal = useCallback(() => {
     if (isSubmitting) return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("orderform");
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
-  }, [isSubmitting, pathname, router, searchParams]);
+    closeOrderForm();
+  }, [closeOrderForm, isSubmitting]);
 
   const priceNumber = Number(price);
   const platformFee = Number((priceNumber * 0.1).toFixed(2));

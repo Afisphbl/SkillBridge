@@ -1,10 +1,9 @@
 import { FiAlertTriangle, FiTrash2 } from "react-icons/fi";
+import { useAccountDeletion } from "@/hooks/profile/useAccountDeletion";
 
-type DangerZoneProps = {
-  onDeleteAccount: () => void;
-};
+export default function DangerZone() {
+  const { openDeleteModal } = useAccountDeletion();
 
-export default function DangerZone({ onDeleteAccount }: DangerZoneProps) {
   return (
     <section className="rounded-2xl border border-red-200 bg-red-50/70 p-5 shadow-(--card-shadow) sm:p-6">
       <div className="flex items-start gap-3">
@@ -21,7 +20,7 @@ export default function DangerZone({ onDeleteAccount }: DangerZoneProps) {
 
       <button
         type="button"
-        onClick={onDeleteAccount}
+        onClick={openDeleteModal}
         className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40"
       >
         <FiTrash2 className="size-4" /> Delete Account
