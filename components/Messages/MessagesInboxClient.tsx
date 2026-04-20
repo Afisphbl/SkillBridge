@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import toast from "react-hot-toast";
 import {
   FiClock,
@@ -32,6 +33,7 @@ type UserPreview = {
   id: string;
   full_name?: string;
   email?: string;
+  avatar?: string;
 };
 
 type ThreadPreview = {
@@ -42,6 +44,7 @@ type ThreadPreview = {
   peerId: string;
   peerName: string;
   peerInitials: string;
+  peerAvatar?: string;
 };
 
 function initialsFromName(name: string) {
@@ -133,8 +136,18 @@ export default function MessagesInboxClient() {
     }
 
     const [incomingResult, outgoingResult, unreadResult] = await Promise.all([
-      filterMessages({ receiver_id: user.id }),
-      filterMessages({ sender_id: user.id }),
+      filterMessages({
+        order_id: undefined,
+        sender_id: undefined,
+        receiver_id: user.id,
+        is_read: undefined,
+      }),
+      filterMessages({
+        order_id: undefined,
+        sender_id: user.id,
+        receiver_id: undefined,
+        is_read: undefined,
+      }),
       getUnreadCount(user.id),
     ]);
 
@@ -178,6 +191,7 @@ export default function MessagesInboxClient() {
           id: entry.id,
           full_name: entry.full_name,
           email: entry.email,
+          avatar: entry.avatar,
         };
       }
     }
@@ -289,6 +303,7 @@ export default function MessagesInboxClient() {
           peerId,
           peerName,
           peerInitials: initialsFromName(peerName),
+          peerAvatar: peer?.avatar,
         };
       })
       .sort((left, right) => {
@@ -418,7 +433,18 @@ export default function MessagesInboxClient() {
             >
               <article className="flex items-start gap-3">
                 <div className="grid size-11 shrink-0 place-items-center rounded-full bg-(--bg-secondary) text-xs font-bold text-(--text-secondary)">
-                  {thread.peerInitials || <FiUser className="size-4" />}
+                  {thread.peerAvatar ? (
+                    <Image
+                      src={thread.peerAvatar}
+                      alt={`${thread.peerName} avatar`}
+                      width={44}
+                      height={44}
+                      unoptimized
+                      className="size-11 rounded-full object-cover"
+                    />
+                  ) : (
+                    thread.peerInitials || <FiUser className="size-4" />
+                  )}
                 </div>
 
                 <div className="min-w-0 flex-1">

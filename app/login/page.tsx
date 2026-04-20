@@ -11,9 +11,9 @@ export const metadata = {
 export default function LoginPage() {
   return (
     <main className="auth-shell flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <Card className=" w-full max-w-md">
         <div className="mb-2 flex flex-col items-center justify-center">
-          <h1 className="mt-2 text-center text-4xl font-extrabold tracking-tight text-cyan-900">
+          <h1 className="mt-2 text-center text-4xl font-extrabold tracking-tight text-(--text-primary)">
             SkillBridge
           </h1>
           <Image
@@ -25,7 +25,7 @@ export default function LoginPage() {
             className="h-24 w-24 rounded-full object-cover"
           />
         </div>
-        <p className="mt-2 text-center text-sm text-slate-600">
+        <p className="mt-2 text-center text-sm text-(--text-secondary)">
           Sign in to continue to your dashboard
         </p>
         <LoginForm />

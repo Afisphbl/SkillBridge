@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { FaCamera } from "react-icons/fa";
 
 type AvatarUploadProps = {
@@ -15,25 +15,24 @@ export default function AvatarUpload({
   error,
   onChange,
 }: AvatarUploadProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrl = useMemo(
+    () => (file ? URL.createObjectURL(file) : null),
+    [file],
+  );
 
   useEffect(() => {
-    if (!file) {
-      setPreviewUrl(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [file]);
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   return (
     <div className="flex flex-col items-center gap-2">
       <label
         htmlFor="avatar"
-        className="group relative flex size-24 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-slate-400 bg-slate-100"
+        className="group relative flex size-24 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-(--border-hover) bg-(--bg-secondary)"
       >
         {previewUrl ? (
           <Image
@@ -44,9 +43,9 @@ export default function AvatarUpload({
             unoptimized
           />
         ) : (
-          <FaCamera className="size-6 text-slate-400" />
+          <FaCamera className="size-6 text-(--text-disabled)" />
         )}
-        <span className="absolute inset-0 bg-slate-900/0 transition group-hover:bg-slate-900/15" />
+        <span className="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
       </label>
 
       <input
@@ -57,8 +56,8 @@ export default function AvatarUpload({
         onChange={(event) => onChange(event.target.files?.[0])}
       />
 
-      <p className="text-xs text-slate-500">Upload Avatar</p>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      <p className="text-xs text-(--text-muted)">Upload Avatar</p>
+      {error && <p className="text-xs text-(--color-danger)">{error}</p>}
     </div>
   );
 }

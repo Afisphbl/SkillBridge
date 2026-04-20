@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "./_styles/index.css";
 
-:root {
+/* :root {
   --background: var(--bg-primary);
   --foreground: var(--text-primary);
   --auth-bg-gradient:
@@ -20,7 +20,7 @@
       rgba(148, 163, 184, 0.2),
       transparent 48%
     );
-}
+} */
 
 @theme inline {
   --color-background: var(--background);
@@ -46,11 +46,9 @@ button {
 }
 
 .auth-card {
-  background: color-mix(in oklab, white 85%, var(--bg-secondary));
-  border: 1px solid #dbe4ed;
-  box-shadow:
-    0 28px 60px -34px rgba(2, 6, 23, 0.55),
-    0 12px 28px -18px rgba(15, 23, 42, 0.35);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
 }
 
 .soft-field {

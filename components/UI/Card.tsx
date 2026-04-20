@@ -9,7 +9,7 @@ export default function Card({
   className?: string;
 }) {
   return (
-    <section className={cn("auth-card rounded-2xl p-7", className)}>
+    <section className={cn("rounded-2xl p-7 ", className, `auth-card`)}>
       {children}
     </section>
   );

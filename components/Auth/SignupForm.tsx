@@ -108,7 +108,7 @@ export default function SignupForm() {
       />
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
+        <label className="mb-1 block text-sm font-medium text-(--text-secondary)">
           Full Name
         </label>
         <Input
@@ -117,12 +117,14 @@ export default function SignupForm() {
           {...register("fullName", { required: "Full name is required" })}
         />
         {errors.fullName && (
-          <p className="mt-1 text-xs text-red-600">{errors.fullName.message}</p>
+          <p className="mt-1 text-xs text-(--color-danger)">
+            {errors.fullName.message}
+          </p>
         )}
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
+        <label className="mb-1 block text-sm font-medium text-(--text-secondary)">
           Email Address
         </label>
         <Input
@@ -138,13 +140,15 @@ export default function SignupForm() {
           })}
         />
         {errors.email && (
-          <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
+          <p className="mt-1 text-xs text-(--color-danger)">
+            {errors.email.message}
+          </p>
         )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-(--text-secondary)">
             Password
           </label>
           <div className="relative">
@@ -163,7 +167,7 @@ export default function SignupForm() {
             />
             <button
               type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-(--text-muted)"
               onClick={() => setShowPassword((value) => !value)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
@@ -175,14 +179,14 @@ export default function SignupForm() {
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1 text-xs text-red-600">
+            <p className="mt-1 text-xs text-(--color-danger)">
               {errors.password.message}
             </p>
           )}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1 block text-sm font-medium text-(--text-secondary)">
             Confirm
           </label>
           <div className="relative">
@@ -199,7 +203,7 @@ export default function SignupForm() {
             />
             <button
               type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-(--text-muted)"
               onClick={() => setShowConfirmPassword((value) => !value)}
               aria-label={
                 showConfirmPassword ? "Hide password" : "Show password"
@@ -213,7 +217,7 @@ export default function SignupForm() {
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="mt-1 text-xs text-red-600">
+            <p className="mt-1 text-xs text-(--color-danger)">
               {errors.confirmPassword.message}
             </p>
           )}
@@ -221,22 +225,22 @@ export default function SignupForm() {
       </div>
 
       <div>
-        <div className="mb-2 text-xs text-slate-600">
+        <div className="mb-2 text-xs text-(--text-secondary)">
           Password strength:{" "}
           <span className="font-semibold">{passwordStrength.label}</span>
         </div>
-        <div className="h-1.5 rounded-full bg-slate-200">
+        <div className="h-1.5 rounded-full bg-(--bg-tertiary)">
           <div
-            className={`h-full rounded-full bg-cyan-800 transition-all ${strengthWidthClass}`}
+            className={`h-full rounded-full bg-(--color-primary-active) transition-all ${strengthWidthClass}`}
           />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
+        <label className="mb-1 block text-sm font-medium text-(--text-secondary)">
           I want to...
         </label>
-        <div className="grid grid-cols-3 gap-2 rounded-md bg-slate-100 p-1">
+        <div className="grid grid-cols-3 gap-2 rounded-md bg-(--bg-secondary) p-1">
           {roles.map((role) => (
             <button
               key={role}
@@ -244,8 +248,8 @@ export default function SignupForm() {
               onClick={() => setValue("role", role)}
               className={`rounded-md px-3 py-2 text-sm capitalize ${
                 selectedRole === role
-                  ? "bg-white text-cyan-900 shadow-sm"
-                  : "text-slate-600"
+                  ? "bg-(--bg-card) text-(--color-primary) shadow-sm"
+                  : "text-(--text-secondary)"
               }`}
             >
               {role}
@@ -254,10 +258,10 @@ export default function SignupForm() {
         </div>
       </div>
 
-      <label className="inline-flex items-start gap-2 text-sm text-slate-600">
+      <label className="inline-flex items-start gap-2 text-sm text-(--text-secondary)">
         <input
           type="checkbox"
-          className="mt-0.5 rounded border-slate-300"
+          className="mt-0.5 rounded border-(--border-color)"
           {...register("termsAccepted", {
             required: "You must accept terms",
           })}
@@ -265,7 +269,7 @@ export default function SignupForm() {
         <span>
           I agree to the Terms of Service and Privacy Policy.
           {errors.termsAccepted && (
-            <span className="block text-xs text-red-600">
+            <span className="block text-xs text-(--color-danger)">
               {errors.termsAccepted.message}
             </span>
           )}
@@ -278,11 +282,11 @@ export default function SignupForm() {
         Create Account
       </Button>
 
-      <p className="pt-1 text-center text-sm text-slate-600">
+      <p className="pt-1 text-center text-sm text-(--text-secondary)">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="font-semibold text-cyan-900 hover:text-cyan-700"
+          className="font-semibold text-(--color-primary) hover:text-(--color-primary-hover)"
         >
           Sign In
         </Link>

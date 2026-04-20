@@ -10,7 +10,6 @@ import {
   FiMessageSquare,
   FiPackage,
   FiSettings,
-  FiShoppingBag,
   FiUser,
   FiX,
 } from "react-icons/fi";
@@ -21,7 +20,6 @@ import Image from "next/image";
 const primaryLinks = [
   { href: "/home", label: "Home", icon: FiHome },
   { href: "/services", label: "Services", icon: FiBriefcase },
-  { href: "/gigs", label: "Gigs", icon: FiShoppingBag },
   { href: "/orders", label: "My Orders", icon: FiPackage },
   { href: "/messages", label: "Messages", icon: FiMessageSquare },
 ];
