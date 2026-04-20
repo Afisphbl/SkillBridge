@@ -30,10 +30,14 @@ export default function RootLayout({
   const initThemeScript = `
     (function () {
       try {
-        var key = "skillbridge-theme";
-        var stored = localStorage.getItem(key);
+        var themeKey = "skillbridge-theme";
+        var modeKey = "skillbridge-theme-mode";
+        var mode = localStorage.getItem(modeKey);
+        var stored = localStorage.getItem(themeKey);
         var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        var theme = stored || (systemDark ? "dark" : "light");
+        var theme = mode === "light" || mode === "dark"
+          ? mode
+          : (stored || (systemDark ? "dark" : "light"));
         document.documentElement.setAttribute("data-theme", theme);
       } catch (e) {}
     })();

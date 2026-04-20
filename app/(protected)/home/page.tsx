@@ -1,13 +1,61 @@
-export default function HomePage() {
+import HomeCategoriesSection from "@/components/Home/HomeCategoriesSection";
+import HomeCtaSection from "@/components/Home/HomeCtaSection";
+import HomeFeaturedServicesSection from "@/components/Home/HomeFeaturedServicesSection";
+import HomeHeroSection from "@/components/Home/HomeHeroSection";
+import type { SellerRow, ServiceRow } from "@/components/Home/types";
+import { getServices } from "@/services/supabase/servicesApi";
+import { getUsersByIds } from "@/services/supabase/userApi";
+
+function toNumber(value: unknown, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+export default async function HomePage() {
+  const { services } = await getServices();
+  const serviceRows = (Array.isArray(services) ? services : []) as ServiceRow[];
+
+  const sellerIds = Array.from(
+    new Set(
+      serviceRows
+        .map((service) => String(service.seller_id || "").trim())
+        .filter(Boolean),
+    ),
+  );
+
+  const { users } = await getUsersByIds(sellerIds);
+  const sellerMap = new Map<string, SellerRow>(
+    (Array.isArray(users) ? users : []).map((user) => [
+      String(user.id),
+      user as SellerRow,
+    ]),
+  );
+
+  const categories = Array.from(
+    new Set(
+      serviceRows
+        .map((service) => String(service.category || "").trim())
+        .filter(Boolean),
+    ),
+  ).slice(0, 8);
+
+  const featuredServices = [...serviceRows]
+    .sort(
+      (left, right) =>
+        toNumber(right.average_rating ?? right.rating) -
+        toNumber(left.average_rating ?? left.rating),
+    )
+    .slice(0, 3);
+
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 className="text-2xl font-bold text-slate-900">
-        Welcome to SkillBridge
-      </h1>
-      <p className="mt-2 text-slate-600">
-        You are authenticated and can now access your freelance marketplace
-        dashboard.
-      </p>
+    <section className="space-y-8">
+      <HomeHeroSection featuredService={featuredServices[0]} />
+      <HomeCategoriesSection categories={categories} />
+      <HomeFeaturedServicesSection
+        featuredServices={featuredServices}
+        sellerMap={sellerMap}
+      />
+      <HomeCtaSection />
     </section>
   );
 }

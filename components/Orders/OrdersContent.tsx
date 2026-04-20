@@ -150,7 +150,7 @@ export default function OrdersContent() {
                         View Details
                       </Link>
                       <Link
-                        href={`/messages?orderId=${order.id}`}
+                        href={`/messages?m=${order.id}`}
                         className="inline-flex h-8 items-center gap-1 rounded-lg border border-(--border-color) px-3 text-xs font-semibold text-(--text-secondary) hover:bg-(--hover-bg)"
                       >
                         <FiMessageSquare className="size-3.5" />

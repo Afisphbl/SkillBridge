@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
+import AuthFormField from "@/components/Auth/AuthFormField";
 import AvatarUpload from "@/components/Auth/AvatarUpload";
 import Button from "@/components/UI/Button";
 import Input from "@/components/UI/Input";
@@ -107,44 +108,30 @@ export default function SignupForm() {
         onChange={onAvatarChange}
       />
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-(--text-secondary)">
-          Full Name
-        </label>
-        <Input
-          placeholder="Jane Doe"
-          error={errors.fullName?.message}
-          {...register("fullName", { required: "Full name is required" })}
-        />
-        {errors.fullName && (
-          <p className="mt-1 text-xs text-(--color-danger)">
-            {errors.fullName.message}
-          </p>
-        )}
-      </div>
+      <AuthFormField
+        label="Full Name"
+        errorMessage={errors.fullName?.message}
+        inputProps={{
+          placeholder: "Jane Doe",
+          ...register("fullName", { required: "Full name is required" }),
+        }}
+      />
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-(--text-secondary)">
-          Email Address
-        </label>
-        <Input
-          type="email"
-          placeholder="jane@example.com"
-          error={errors.email?.message}
-          {...register("email", {
+      <AuthFormField
+        label="Email Address"
+        errorMessage={errors.email?.message}
+        inputProps={{
+          type: "email",
+          placeholder: "jane@example.com",
+          ...register("email", {
             required: "Email is required",
             pattern: {
               value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
               message: "Enter a valid email",
             },
-          })}
-        />
-        {errors.email && (
-          <p className="mt-1 text-xs text-(--color-danger)">
-            {errors.email.message}
-          </p>
-        )}
-      </div>
+          }),
+        }}
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <div>
