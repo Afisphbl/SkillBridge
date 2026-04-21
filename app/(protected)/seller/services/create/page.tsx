@@ -1,4 +1,4 @@
-import CreateServicePage from "./components/CreateServicePage";
+import CreateServicePage from "@/components/createService/CreateServicePage";
 
 export const metadata = {
   title: "Create Service",

@@ -1,4 +1,5 @@
 export const AUTH_COOKIE_KEY = "sb-access-token";
+// Client-writable UI hint only. Do not use for authorization decisions.
 export const USER_ROLE_COOKIE_KEY = "sb-user-role";
 
 export const PUBLIC_AUTH_ROUTES = ["/login", "/signup"];

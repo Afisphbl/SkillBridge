@@ -50,6 +50,16 @@ export async function uploadGalleryImages(files, sellerId, serviceId) {
     }
   }
 
+  if (errors.length && uploaded.length) {
+    const { error: cleanupError } = await supabase.storage
+      .from(BUCKET)
+      .remove(uploaded);
+
+    if (cleanupError) {
+      errors.push(`Cleanup failed: ${cleanupError.message}`);
+    }
+  }
+
   return {
     paths: uploaded,
     error: errors.length ? errors.join("; ") : null,

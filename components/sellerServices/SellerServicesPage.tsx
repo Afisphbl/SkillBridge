@@ -432,7 +432,7 @@ export default function SellerServicesPage() {
 
       {!canShowEmptyState ? (
         <nav
-          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-(--border-color) bg-(--bg-card) px-4 py-3"
+          className="flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-(--border-color) bg-(--bg-card) px-4 py-3"
           aria-label="Services pagination"
         >
           <button

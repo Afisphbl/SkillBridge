@@ -33,6 +33,15 @@ export default function ServiceCard({
 }: ServiceCardProps) {
   return (
     <article className="overflow-visible rounded-2xl border border-(--border-color) bg-(--bg-card) shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+      <div className="absolute right-3 top-3 z-20">
+        <ServiceActionsMenu
+          service={service}
+          onDuplicate={onDuplicate}
+          onPause={onPause}
+          onActivate={onActivate}
+          onDelete={onDelete}
+        />
+      </div>
       <div className="relative h-44 w-full overflow-hidden rounded-t-2xl bg-(--bg-secondary)">
         <Image
           src={service.image || "/SkillBridge.png"}
@@ -109,16 +118,6 @@ export default function ServiceCard({
           >
             {service.visibility === "public" ? "Public" : "Private"}
           </span>
-        </div>
-
-        <div className="flex items-center justify-end border-t border-(--border-color) pt-3">
-          <ServiceActionsMenu
-            service={service}
-            onDuplicate={onDuplicate}
-            onPause={onPause}
-            onActivate={onActivate}
-            onDelete={onDelete}
-          />
         </div>
       </div>
     </article>

@@ -51,7 +51,8 @@ function resolveRole(rawRole: unknown): UserRole {
   return "buyer";
 }
 
-function writeRoleCookie(role: UserRole | null, rememberMe = true) {
+// This cookie is a client-side UX hint only. Never use it for authorization.
+function writeRoleHintCookie(role: UserRole | null, rememberMe = true) {
   if (typeof document === "undefined") return;
 
   if (!role) {
@@ -85,7 +86,7 @@ export function useAuth() {
         writeAuthCookie(data.session?.access_token ?? null, true);
 
         if (!data.session?.user?.id) {
-          writeRoleCookie(null);
+          writeRoleHintCookie(null);
           return;
         }
 
@@ -93,13 +94,13 @@ export function useAuth() {
         if (!mounted) return;
 
         const userRole = resolveRole(profile?.role);
-        writeRoleCookie(userRole, true);
+        writeRoleHintCookie(userRole, true);
       } catch (error) {
         if (!mounted) return;
 
         setSession(null);
         writeAuthCookie(null);
-        writeRoleCookie(null);
+        writeRoleHintCookie(null);
         console.error("Failed to initialize auth session", error);
       } finally {
         if (mounted) {
@@ -117,15 +118,15 @@ export function useAuth() {
         setLoadingSession(false);
 
         if (!nextSession?.user?.id) {
-          writeRoleCookie(null);
+          writeRoleHintCookie(null);
           return;
         }
 
         try {
           const { data: profile } = await getUserById(nextSession.user.id);
-          writeRoleCookie(resolveRole(profile?.role), true);
+          writeRoleHintCookie(resolveRole(profile?.role), true);
         } catch (error) {
-          writeRoleCookie(null);
+          writeRoleHintCookie(null);
           console.error("Failed to sync auth role cookie", error);
         }
       },
@@ -169,7 +170,7 @@ export function useAuth() {
         const userRole = resolveRole(profile?.role);
 
         writeAuthCookie(data.session?.access_token ?? null, rememberMe);
-        writeRoleCookie(userRole, rememberMe);
+        writeRoleHintCookie(userRole, rememberMe);
         toast.success("Login successful");
         router.push(getRouteForRole(userRole));
         return { success: true };
@@ -223,7 +224,7 @@ export function useAuth() {
 
         const { data: sessionData } = await getSession();
         writeAuthCookie(sessionData.session?.access_token ?? null, true);
-        writeRoleCookie(role, true);
+        writeRoleHintCookie(role, true);
 
         toast.success("Account created successfully");
         router.push(getRouteForRole(role));
@@ -249,7 +250,7 @@ export function useAuth() {
       }
 
       writeAuthCookie(null);
-      writeRoleCookie(null);
+      writeRoleHintCookie(null);
       toast.success("Signed out successfully");
       router.push("/login");
     } finally {

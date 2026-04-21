@@ -55,10 +55,13 @@ export default function ServiceActionsMenu({
   }, [open]);
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className={open ? "relative z-50" : "relative"} ref={menuRef}>
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((prev) => !prev);
+        }}
         className="grid size-9 place-items-center rounded-lg border border-(--border-color) bg-(--bg-card) text-(--text-secondary) hover:bg-(--hover-bg) hover:text-(--text-primary)"
         aria-haspopup="menu"
         aria-label="Open service actions"
@@ -69,7 +72,8 @@ export default function ServiceActionsMenu({
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-2 w-48 rounded-xl border border-(--border-color) bg-(--bg-card) p-1.5 shadow-lg"
+          onClick={(event) => event.stopPropagation()}
+          className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-(--border-color) bg-(--bg-card) p-1.5 shadow-lg"
         >
           <Link
             href={`/seller/services/edit/${service.id}`}

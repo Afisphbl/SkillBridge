@@ -34,8 +34,11 @@ export default function GalleryUploader({
           className="hidden"
           disabled={remaining <= 0}
           onChange={(event) => {
-            const selected = Array.from(event.target.files || []);
-            onAdd(selected);
+            const selected = Array.from(event.target.files || []).slice(
+              0,
+              remaining,
+            );
+            if (selected.length) onAdd(selected);
             event.currentTarget.value = "";
           }}
         />

@@ -238,27 +238,28 @@ export default function SellerSidebar({
         aria-hidden
       />
 
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-55 border-r border-(--border-color) bg-(--bg-sidebar) transition-transform",
-          mobileOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="flex h-full flex-col px-5 py-6">
-          {brand}
-          {navItems}
+      {mobileOpen ? (
+        <aside
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-y-0 left-0 z-50 w-55 border-r border-(--border-color) bg-(--bg-sidebar) transition-transform"
+        >
+          <div className="flex h-full flex-col px-5 py-6">
+            {brand}
+            {navItems}
 
-          <button
-            type="button"
-            onClick={handleSignOut}
-            disabled={submitting}
-            className="mt-auto flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-(--color-primary) hover:bg-(--hover-bg) disabled:opacity-60"
-          >
-            <FiLogOut className="size-4" />
-            <span>Logout</span>
-          </button>
-        </div>
-      </aside>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={submitting}
+              className="mt-auto flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-(--color-primary) hover:bg-(--hover-bg) disabled:opacity-60"
+            >
+              <FiLogOut className="size-4" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </aside>
+      ) : null}
     </>
   );
 }

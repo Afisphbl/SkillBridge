@@ -20,6 +20,13 @@ import type { ServiceFormData, ServiceFormErrors, SubmitMode } from "./types";
 
 const MAX_GALLERY = 5;
 
+function cloneBrowserFile(file: File) {
+  return new File([file], file.name, {
+    type: file.type,
+    lastModified: file.lastModified,
+  });
+}
+
 function validateForm(
   data: ServiceFormData,
   hasThumbnail: boolean,
@@ -78,6 +85,8 @@ export default function CreateServicePage() {
     serviceId: string;
     sellerId: string;
     mode: SubmitMode;
+    thumbnailFileCopy: File;
+    galleryFileCopies: File[];
   } | null>(null);
 
   const thumbnailPreview = useMemo(
@@ -124,26 +133,33 @@ export default function CreateServicePage() {
     serviceId,
     sellerId,
     mode,
+    thumbnailFileCopy,
+    galleryFileCopies,
   }: {
     serviceId: string;
     sellerId: string;
     mode: SubmitMode;
+    thumbnailFileCopy?: File;
+    galleryFileCopies?: File[];
   }) => {
-    if (!thumbnailFile) {
+    const thumbnailFileForUpload = thumbnailFileCopy ?? thumbnailFile;
+    const galleryFilesForUpload = galleryFileCopies ?? galleryFiles;
+
+    if (!thumbnailFileForUpload) {
       throw new Error("Thumbnail is required");
     }
 
     setLoadingLabel("Uploading thumbnail...");
     const { path: thumbnailPath, error: thumbnailError } =
-      await uploadThumbnail(thumbnailFile, sellerId, serviceId);
+      await uploadThumbnail(thumbnailFileForUpload, sellerId, serviceId);
 
     if (thumbnailError || !thumbnailPath) {
       throw new Error("Image upload failed");
     }
 
     setLoadingLabel("Uploading gallery...");
-    const galleryUploadResult = galleryFiles.length
-      ? await uploadGalleryImages(galleryFiles, sellerId, serviceId)
+    const galleryUploadResult = galleryFilesForUpload.length
+      ? await uploadGalleryImages(galleryFilesForUpload, sellerId, serviceId)
       : { paths: [], error: null };
 
     if (galleryUploadResult.error) {
@@ -152,7 +168,10 @@ export default function CreateServicePage() {
 
     const galleryPaths = galleryUploadResult.paths;
 
-    if (galleryFiles.length && galleryPaths.length !== galleryFiles.length) {
+    if (
+      galleryFilesForUpload.length &&
+      galleryPaths.length !== galleryFilesForUpload.length
+    ) {
       throw new Error("Image upload failed");
     }
 
@@ -280,8 +299,14 @@ export default function CreateServicePage() {
         toast.error(message || "Network error. Please try again.");
       }
 
-      if (message === "Image upload failed" && createdServiceId && sellerId) {
-        setRetryContext({ serviceId: createdServiceId, sellerId, mode });
+      if (createdServiceId && sellerId && thumbnailFile) {
+        setRetryContext({
+          serviceId: createdServiceId,
+          sellerId,
+          mode,
+          thumbnailFileCopy: cloneBrowserFile(thumbnailFile),
+          galleryFileCopies: galleryFiles.map((file) => cloneBrowserFile(file)),
+        });
       }
     } finally {
       setLoading(false);
