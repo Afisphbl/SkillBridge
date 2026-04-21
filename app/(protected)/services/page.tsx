@@ -5,6 +5,18 @@ export const metadata = {
   description: "Explore and manage service offerings available on SkillBridge.",
 };
 
-export default function MarketplaceServicesPage() {
-  return <MarketplaceServicesClient />;
+type ServicesPageProps = {
+  searchParams: Promise<{ q?: string | string[] }>;
+};
+
+export default async function MarketplaceServicesPage({
+  searchParams,
+}: ServicesPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const qParam = resolvedSearchParams.q;
+  const initialQuery = (
+    Array.isArray(qParam) ? qParam[0] : (qParam ?? "")
+  ).trim();
+
+  return <MarketplaceServicesClient initialQuery={initialQuery} />;
 }

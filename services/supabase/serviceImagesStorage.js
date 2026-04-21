@@ -1,6 +1,6 @@
 import { supabase } from "./client";
 
-const BUCKET = "servicesImage";
+const BUCKET = "serviceImages";
 
 /**
  * Upload thumbnail
@@ -28,6 +28,7 @@ export async function uploadThumbnail(file, sellerId, serviceId) {
  */
 export async function uploadGalleryImages(files, sellerId, serviceId) {
   const uploaded = [];
+  const errors = [];
 
   for (const file of files) {
     const safeName = file.name.replace(/\s/g, "_");
@@ -44,10 +45,15 @@ export async function uploadGalleryImages(files, sellerId, serviceId) {
 
     if (!error && data?.path) {
       uploaded.push(data.path);
+    } else {
+      errors.push(error?.message || `Failed uploading ${file.name}`);
     }
   }
 
-  return uploaded;
+  return {
+    paths: uploaded,
+    error: errors.length ? errors.join("; ") : null,
+  };
 }
 
 /**
