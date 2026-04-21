@@ -1,14 +1,21 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import type { EnrichedOrder, StatusTab, UserRole } from "./types";
+import type {
+  EnrichedOrder,
+  SellerOrdersFilterState,
+  StatusTab,
+  UserRole,
+} from "./types";
 
 type OrdersState = {
   orders: EnrichedOrder[];
   isLoading: boolean;
   activeTab: StatusTab;
   searchQuery: string;
+  sellerFilters: SellerOrdersFilterState;
   currentPage: number;
+  itemsPerPage: number;
   role: UserRole;
   currentUserId: string;
   errorMessage: string;
@@ -19,7 +26,18 @@ const state: OrdersState = {
   isLoading: true,
   activeTab: "all",
   searchQuery: "",
+  sellerFilters: {
+    status: "all",
+    createdFrom: "",
+    createdTo: "",
+    deliveryFrom: "",
+    deliveryTo: "",
+    minPrice: "",
+    maxPrice: "",
+    sortBy: "newest",
+  },
   currentPage: 1,
+  itemsPerPage: 8,
   role: "buyer",
   currentUserId: "",
   errorMessage: "",
@@ -49,7 +67,9 @@ export function useOrdersStore<T>(selector: (snapshot: OrdersState) => T) {
 }
 
 export function setOrdersState(
-  patch: Partial<OrdersState> | ((current: OrdersState) => Partial<OrdersState>),
+  patch:
+    | Partial<OrdersState>
+    | ((current: OrdersState) => Partial<OrdersState>),
 ) {
   const nextPatch = typeof patch === "function" ? patch(state) : patch;
   Object.assign(state, nextPatch);

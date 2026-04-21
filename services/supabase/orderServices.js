@@ -32,6 +32,17 @@ export const getOrders = async (page = 1, limit = 10) => {
   }
 };
 
+/**
+ * Get orders for a specific seller
+ */
+export const getSellerOrders = async (sellerId, page = 1, limit = 10) => {
+  return await getOrdersWithFilters({
+    seller_id: sellerId,
+    page,
+    limit,
+  });
+};
+
 /*
 ========================================
 GET ORDERS WITH FILTERS
@@ -44,6 +55,14 @@ export const getOrdersWithFilters = async ({
   seller_id,
   service_id,
   search,
+  min_price,
+  max_price,
+  created_from,
+  created_to,
+  delivery_from,
+  delivery_to,
+  sort_by = "created_at",
+  sort_order = "desc",
   page = 1,
   limit = 10,
 }) => {
@@ -70,12 +89,40 @@ export const getOrdersWithFilters = async ({
       query = query.ilike("order_number", `%${search}%`);
     }
 
+    if (Number.isFinite(min_price)) {
+      query = query.gte("price", Number(min_price));
+    }
+
+    if (Number.isFinite(max_price)) {
+      query = query.lte("price", Number(max_price));
+    }
+
+    if (created_from) {
+      query = query.gte("created_at", created_from);
+    }
+
+    if (created_to) {
+      query = query.lte("created_at", created_to);
+    }
+
+    if (delivery_from) {
+      query = query.gte("delivery_date", delivery_from);
+    }
+
+    if (delivery_to) {
+      query = query.lte("delivery_date", delivery_to);
+    }
+
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
+    const allowedSortFields = new Set(["created_at", "price", "delivery_date"]);
+    const safeSortBy = allowedSortFields.has(sort_by) ? sort_by : "created_at";
+    const ascending = String(sort_order || "desc").toLowerCase() === "asc";
+
     const { data, error } = await query
       .range(from, to)
-      .order("created_at", { ascending: false });
+      .order(safeSortBy, { ascending, nullsFirst: false });
 
     if (error) {
       console.error("Filter Orders Error:", error);
@@ -304,18 +351,32 @@ UPDATE ORDER
 ========================================
 */
 
-export const updateOrder = async (orderId, updates) => {
+export const updateOrder = async (orderId, updates, constraints = {}) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("orders")
-      .update(updates)
-      .eq("id", orderId)
-      .select()
-      .single();
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", orderId);
+
+    for (const [field, value] of Object.entries(constraints)) {
+      query = query.eq(field, value);
+    }
+
+    const { data, error } = await query.select().maybeSingle();
 
     if (error) {
       console.error("Update Order Error:", error);
       return { success: false, error };
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        error: { message: "Order not found or you do not have permission." },
+      };
     }
 
     return {
@@ -326,6 +387,190 @@ export const updateOrder = async (orderId, updates) => {
     console.error("Unexpected Error:", err);
     return { success: false, error: err };
   }
+};
+
+/**
+ * Update order status while keeping status transition logic centralized.
+ */
+export const updateOrderStatus = async (orderId, status, extraUpdates = {}) => {
+  if (!orderId) {
+    return {
+      success: false,
+      error: { message: "Order ID is required." },
+    };
+  }
+
+  if (!status) {
+    return {
+      success: false,
+      error: { message: "Status is required." },
+    };
+  }
+
+  const normalizedStatus = String(status).toLowerCase();
+  const now = new Date().toISOString();
+
+  const statusTimestamps = {
+    in_progress: {
+      started_at: now,
+    },
+    delivered: {
+      delivered_at: now,
+    },
+    completed: {
+      completed_at: now,
+    },
+    cancelled: {
+      cancelled_at: now,
+    },
+  };
+
+  return await updateOrder(orderId, {
+    status: normalizedStatus,
+    ...(statusTimestamps[normalizedStatus] || {}),
+    ...extraUpdates,
+  });
+};
+
+/**
+ * Seller delivers the order
+ */
+export const deliverOrder = async (orderId, deliveryData) => {
+  const { message, files } = deliveryData;
+  return await updateOrder(orderId, {
+    status: "delivered",
+    delivered_at: new Date().toISOString(),
+    delivery_message: message,
+    delivery_files: files,
+  });
+};
+
+/**
+ * Accept a pending order
+ */
+export const acceptOrder = async (orderId) => {
+  try {
+    if (!orderId) {
+      return {
+        success: false,
+        error: { message: "Order ID is required." },
+      };
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user?.id) {
+      return {
+        success: false,
+        error: authError || { message: "Authentication is required." },
+      };
+    }
+
+    const { data: existingOrder, error: orderLookupError } = await supabase
+      .from("orders")
+      .select("id,seller_id,status")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (orderLookupError) {
+      console.error("Accept Order Lookup Error:", orderLookupError);
+      return {
+        success: false,
+        error: orderLookupError,
+      };
+    }
+
+    if (!existingOrder) {
+      return {
+        success: false,
+        error: { message: "Order not found." },
+      };
+    }
+
+    if (existingOrder.seller_id !== user.id) {
+      return {
+        success: false,
+        error: { message: "Only the seller who owns this order can accept it." },
+      };
+    }
+
+    if (String(existingOrder.status || "").toLowerCase() !== "pending") {
+      return {
+        success: false,
+        error: {
+          message: "Only pending orders can be accepted.",
+        },
+      };
+    }
+
+    return await updateOrder(
+      orderId,
+      {
+        status: "accepted",
+      },
+      {
+        seller_id: user.id,
+        status: "pending",
+      },
+    );
+  } catch (err) {
+    console.error("Unexpected Error:", err);
+    return { success: false, error: err };
+  }
+};
+
+/**
+ * Cancel an order with a reason
+ */
+export const cancelOrder = async (orderId, reason) => {
+  return await updateOrderStatus(orderId, "cancelled", {
+    cancellation_reason: reason || "Cancelled by user",
+  });
+};
+
+/**
+ * Handle Revision Request (Seller responding to revision)
+ */
+export const submitRevision = async (orderId, revisionData) => {
+  const { message, files } = revisionData;
+  return await updateOrderStatus(orderId, "delivered", {
+    delivery_message: message,
+    delivery_files: files,
+    revision_count: revisionData?.revision_count,
+  });
+};
+
+/**
+ * Buyer or seller can request revision with message details.
+ */
+export const requestRevision = async (orderId, revisionMessage) => {
+  return await updateOrderStatus(orderId, "revision_requested", {
+    revision_notes: revisionMessage || "Revision requested.",
+  });
+};
+
+/**
+ * Mark delivered order as completed.
+ */
+export const markAsCompleted = async (orderId) => {
+  return await updateOrderStatus(orderId, "completed");
+};
+
+/**
+ * Request delivery extension by updating deadline and seller note.
+ */
+export const requestOrderExtension = async ({
+  orderId,
+  deliveryDate,
+  note,
+}) => {
+  return await updateOrder(orderId, {
+    delivery_date: deliveryDate || null,
+    revision_notes: note || null,
+  });
 };
 
 /*

@@ -5,7 +5,11 @@ import toast from "react-hot-toast";
 import { getCurrentUser } from "@/services/supabase/auth";
 import {
   getOrdersWithFilters,
-  updateOrder,
+  acceptOrder,
+  deliverOrder,
+  submitRevision,
+  requestOrderExtension,
+  cancelOrder as cancelOrderService,
 } from "@/services/supabase/orderServices";
 import { supabase } from "@/services/supabase/client";
 import { getServicesByIds } from "@/services/supabase/servicesApi";
@@ -33,8 +37,46 @@ function toErrorMessage(error: unknown, fallback: string) {
 }
 
 export function useOrdersActions(routeScope?: OrdersRouteScope) {
+  const currentUserId = useOrdersStore((snapshot) => snapshot.currentUserId);
+  const orders = useOrdersStore((snapshot) => snapshot.orders);
+
+  const optimisticOrderPatch = useCallback(
+    (orderId: string, patch: Partial<OrderRecord>) => {
+      setOrdersState((current) => ({
+        orders: current.orders.map((order) =>
+          order.id === orderId
+            ? {
+                ...order,
+                ...patch,
+                updated_at: new Date().toISOString(),
+              }
+            : order,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const replaceOrderFromServer = useCallback(
+    (nextOrder: Partial<OrderRecord> & { id: string }) => {
+      setOrdersState((current) => ({
+        orders: current.orders.map((order) =>
+          order.id === nextOrder.id
+            ? {
+                ...order,
+                ...nextOrder,
+              }
+            : order,
+        ),
+      }));
+    },
+    [],
+  );
+
   const enrichOrders = useCallback(async (rows: OrderRecord[]) => {
-    const serviceIds = Array.from(new Set(rows.map((order) => order.service_id)));
+    const serviceIds = Array.from(
+      new Set(rows.map((order) => order.service_id)),
+    );
     const participantIds = Array.from(
       new Set(rows.flatMap((order) => [order.buyer_id, order.seller_id])),
     );
@@ -85,7 +127,9 @@ export function useOrdersActions(routeScope?: OrdersRouteScope) {
 
       const { data: profile, error: profileError } = await getUserById(user.id);
       if (profileError) {
-        throw new Error(toErrorMessage(profileError, "Unable to load profile."));
+        throw new Error(
+          toErrorMessage(profileError, "Unable to load profile."),
+        );
       }
 
       const profileRole =
@@ -95,11 +139,17 @@ export function useOrdersActions(routeScope?: OrdersRouteScope) {
 
       const resolvedRole = routeScope || profileRole;
 
-      if (routeScope === "seller" && !(profileRole === "seller" || profileRole === "both")) {
+      if (
+        routeScope === "seller" &&
+        !(profileRole === "seller" || profileRole === "both")
+      ) {
         throw new Error("Seller access is required to view this page.");
       }
 
-      if (routeScope === "buyer" && !(profileRole === "buyer" || profileRole === "both")) {
+      if (
+        routeScope === "buyer" &&
+        !(profileRole === "buyer" || profileRole === "both")
+      ) {
         throw new Error("Buyer access is required to view this page.");
       }
 
@@ -131,13 +181,17 @@ export function useOrdersActions(routeScope?: OrdersRouteScope) {
       if (resolvedRole === "buyer") {
         const buyerResult = await fetchBuyerOrders();
         if (!buyerResult.success) {
-          throw new Error(toErrorMessage(buyerResult.error, "Failed to load orders."));
+          throw new Error(
+            toErrorMessage(buyerResult.error, "Failed to load orders."),
+          );
         }
         orderRows = (buyerResult.orders || []) as OrderRecord[];
       } else if (resolvedRole === "seller") {
         const sellerResult = await fetchSellerOrders();
         if (!sellerResult.success) {
-          throw new Error(toErrorMessage(sellerResult.error, "Failed to load orders."));
+          throw new Error(
+            toErrorMessage(sellerResult.error, "Failed to load orders."),
+          );
         }
         orderRows = (sellerResult.orders || []) as OrderRecord[];
       } else {
@@ -172,29 +226,152 @@ export function useOrdersActions(routeScope?: OrdersRouteScope) {
   }, [enrichOrders, routeScope]);
 
   const cancelOrder = useCallback(
-    async (orderId: string) => {
-      const confirmed = window.confirm("Cancel this order?");
-      if (!confirmed) return;
-
-      const { success, error } = await updateOrder(orderId, {
+    async (orderId: string, reason?: string) => {
+      optimisticOrderPatch(orderId, {
         status: "cancelled",
+        cancellation_reason: reason || "Cancelled by seller",
         cancelled_at: new Date().toISOString(),
-        cancellation_reason: "Cancelled from orders page",
-        updated_at: new Date().toISOString(),
       });
+
+      const { success, error } = await cancelOrderService(orderId, reason);
 
       if (!success) {
         toast.error(toErrorMessage(error, "Unable to cancel order."));
+        void fetchOrders();
         return;
       }
 
       toast.success("Order cancelled successfully.");
-      void fetchOrders();
+      setOrdersState({ isLoading: false });
     },
-    [fetchOrders],
+    [fetchOrders, optimisticOrderPatch],
   );
 
-  return { fetchOrders, cancelOrder };
+  const handleAcceptOrder = useCallback(
+    async (orderId: string) => {
+      const targetOrder = orders.find((order) => order.id === orderId);
+
+      if (
+        !targetOrder ||
+        targetOrder.seller_id !== currentUserId ||
+        String(targetOrder.status || "").toLowerCase() !== "pending"
+      ) {
+        toast.error("Failed to accept order. Please try again.");
+        return;
+      }
+
+      optimisticOrderPatch(orderId, {
+        status: "accepted",
+      });
+
+      const { success, error, order } = await acceptOrder(orderId);
+
+      if (!success) {
+        toast.error(
+          toErrorMessage(error, "Failed to accept order. Please try again."),
+        );
+        void fetchOrders();
+        return;
+      }
+
+      replaceOrderFromServer(
+        order || {
+          ...targetOrder,
+          status: "accepted",
+        },
+      );
+      toast.success("Order accepted!");
+      setOrdersState({ isLoading: false });
+    },
+    [
+      currentUserId,
+      fetchOrders,
+      optimisticOrderPatch,
+      orders,
+      replaceOrderFromServer,
+    ],
+  );
+
+  const handleDeliverOrder = useCallback(
+    async (
+      orderId: string,
+      deliveryData: { message: string; files: string[] },
+    ) => {
+      optimisticOrderPatch(orderId, {
+        status: "delivered",
+        delivered_at: new Date().toISOString(),
+        delivery_message: deliveryData.message,
+        delivery_files: deliveryData.files,
+      });
+
+      const { success, error } = await deliverOrder(orderId, deliveryData);
+
+      if (!success) {
+        toast.error(toErrorMessage(error, "Unable to deliver order."));
+        void fetchOrders();
+        return;
+      }
+
+      toast.success("Order delivered successfully!");
+      setOrdersState({ isLoading: false });
+    },
+    [fetchOrders, optimisticOrderPatch],
+  );
+
+  const handleSubmitRevision = useCallback(
+    async (
+      orderId: string,
+      revisionData: { message: string; files: string[] },
+    ) => {
+      optimisticOrderPatch(orderId, {
+        status: "delivered",
+        delivery_message: revisionData.message,
+        delivery_files: revisionData.files,
+      });
+
+      const { success, error } = await submitRevision(orderId, revisionData);
+
+      if (!success) {
+        toast.error(toErrorMessage(error, "Unable to submit revision."));
+        void fetchOrders();
+        return;
+      }
+
+      toast.success("Revision submitted!");
+      setOrdersState({ isLoading: false });
+    },
+    [fetchOrders, optimisticOrderPatch],
+  );
+
+  const handleRequestExtension = useCallback(
+    async (input: { orderId: string; deliveryDate: string; note: string }) => {
+      optimisticOrderPatch(input.orderId, {
+        delivery_date: input.deliveryDate,
+        revision_notes: input.note,
+      });
+
+      const { success, error } = await requestOrderExtension(input);
+
+      if (!success) {
+        toast.error(toErrorMessage(error, "Unable to request extension."));
+        void fetchOrders();
+        return;
+      }
+
+      toast.success("Delivery extension requested.");
+      setOrdersState({ isLoading: false });
+    },
+    [fetchOrders, optimisticOrderPatch],
+  );
+
+  return {
+    fetchOrders,
+    cancelOrder,
+    acceptOrder: handleAcceptOrder,
+    deliverOrder: handleDeliverOrder,
+    submitRevision: handleSubmitRevision,
+    requestExtension: handleRequestExtension,
+  };
 }
 
 export function useOrdersLifecycle(routeScope?: OrdersRouteScope) {

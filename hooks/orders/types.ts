@@ -8,12 +8,21 @@ export type OrderRecord = {
   price?: number | null;
   platform_fee?: number | null;
   seller_earnings?: number | null;
+  requirements?: string | { description?: string | null } | null;
   delivery_date?: string | null;
   delivered_at?: string | null;
   completed_at?: string | null;
   cancelled_at?: string | null;
   cancellation_reason?: string | null;
   created_at?: string | null;
+  updated_at?: string | null;
+
+  // Seller workflow fields
+  started_at?: string | null;
+  delivery_message?: string | null;
+  delivery_files?: string[] | string | null; // Can be JSON string or array
+  revision_notes?: string | null;
+  revision_count?: number | null;
 };
 
 export type EnrichedOrder = OrderRecord & {
@@ -24,11 +33,42 @@ export type EnrichedOrder = OrderRecord & {
 
 export type UserRole = "buyer" | "seller" | "both";
 
-export type StatusTab = "all" | "pending" | "delivered" | "completed" | "cancelled";
+export type SellerSortOption =
+  | "newest"
+  | "oldest"
+  | "highest_price"
+  | "nearest_deadline";
+
+export type SellerOrdersFilterState = {
+  status:
+    | "all"
+    | "pending"
+    | "in_progress"
+    | "delivered"
+    | "completed"
+    | "cancelled"
+    | "revision_requested";
+  createdFrom: string;
+  createdTo: string;
+  deliveryFrom: string;
+  deliveryTo: string;
+  minPrice: string;
+  maxPrice: string;
+  sortBy: SellerSortOption;
+};
+
+export type StatusTab =
+  | "all"
+  | "pending"
+  | "in_progress"
+  | "delivered"
+  | "completed"
+  | "cancelled";
 
 export const ORDER_TABS: Array<{ key: StatusTab; label: string }> = [
   { key: "all", label: "All" },
   { key: "pending", label: "Pending" },
+  { key: "in_progress", label: "In Progress" },
   { key: "delivered", label: "Delivered" },
   { key: "completed", label: "Completed" },
   { key: "cancelled", label: "Cancelled" },
@@ -50,7 +90,17 @@ export function formatDate(value?: string | null) {
 }
 
 export function normalizeStatus(status?: string | null) {
-  return (status || "pending").toLowerCase();
+  const value = (status || "pending").toLowerCase();
+
+  if (value === "confirmed") {
+    return "in_progress";
+  }
+
+  if (value === "accepted") {
+    return "in_progress";
+  }
+
+  return value;
 }
 
 export function dedupeOrders(records: OrderRecord[]) {

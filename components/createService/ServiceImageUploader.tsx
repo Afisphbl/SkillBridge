@@ -7,6 +7,9 @@ export default function ServiceImageUploader({
   thumbnailError,
   galleryFiles,
   galleryPreviews,
+  thumbnailTitle,
+  galleryCurrentCount,
+  maxGallery,
   onThumbnailChange,
   onThumbnailRemove,
   onGalleryAdd,
@@ -17,6 +20,9 @@ export default function ServiceImageUploader({
   thumbnailError?: string;
   galleryFiles: File[];
   galleryPreviews: string[];
+  thumbnailTitle?: string;
+  galleryCurrentCount?: number;
+  maxGallery?: number;
   onThumbnailChange: (file: File | null) => void;
   onThumbnailRemove: () => void;
   onGalleryAdd: (files: File[]) => void;
@@ -30,6 +36,7 @@ export default function ServiceImageUploader({
         file={thumbnailFile}
         previewUrl={thumbnailPreview}
         error={thumbnailError}
+        title={thumbnailTitle}
         onChange={onThumbnailChange}
         onRemove={onThumbnailRemove}
       />
@@ -37,6 +44,8 @@ export default function ServiceImageUploader({
       <GalleryUploader
         files={galleryFiles}
         previewUrls={galleryPreviews}
+        currentCount={galleryCurrentCount}
+        maxGallery={maxGallery}
         onAdd={onGalleryAdd}
         onRemove={onGalleryRemove}
       />
