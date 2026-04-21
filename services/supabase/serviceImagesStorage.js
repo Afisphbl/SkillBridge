@@ -132,8 +132,8 @@ export async function duplicateServiceImage(
       .from(BUCKET)
       .copy(sourcePath, destinationPath);
 
-    if (!error && data?.path) {
-      return { path: data.path, error: null };
+    if (!error && data?.Key) {
+      return { path: data.Key, error: null };
     }
   }
 
