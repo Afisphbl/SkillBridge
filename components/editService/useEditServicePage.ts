@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { getSession } from "@/services/supabase/auth";
+import { supabase } from "@/services/supabase/client";
 import { updateServiceImages } from "@/services/supabase/serviceImageDb";
 import {
   uploadGalleryImages,
@@ -29,6 +30,7 @@ type ServiceRecord = {
 };
 
 const MAX_GALLERY = 5;
+const SERVICE_IMAGES_BUCKET = "serviceImages";
 
 const INITIAL_FORM_DATA: ServiceFormData = {
   title: "",
@@ -45,6 +47,42 @@ function normalizeGalleryUrls(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
 
   return value.filter((item): item is string => typeof item === "string");
+}
+
+function toStoragePath(pathOrUrl: unknown) {
+  if (typeof pathOrUrl !== "string") return "";
+
+  const trimmed = pathOrUrl.trim();
+  if (!trimmed) return "";
+
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return trimmed.replace(/^\/+/, "");
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    const marker = `/object/public/${SERVICE_IMAGES_BUCKET}/`;
+    const markerIndex = parsed.pathname.indexOf(marker);
+
+    if (markerIndex === -1) {
+      return "";
+    }
+
+    return decodeURIComponent(
+      parsed.pathname.slice(markerIndex + marker.length).replace(/^\/+/, ""),
+    );
+  } catch {
+    return "";
+  }
+}
+
+async function removeStoragePaths(paths: string[]) {
+  const normalized = Array.from(
+    new Set(paths.map((value) => toStoragePath(value)).filter(Boolean)),
+  );
+  if (!normalized.length) return;
+
+  await supabase.storage.from(SERVICE_IMAGES_BUCKET).remove(normalized);
 }
 
 function validateForm(data: ServiceFormData): ServiceFormErrors {
@@ -272,6 +310,13 @@ export function useEditServicePage(serviceId: string) {
       const hasImageChanges = thumbnailChanged || galleryChanged;
 
       if (hasImageChanges) {
+        const originalThumbnailPath = toStoragePath(serviceData.thumbnail_url);
+        const originalGalleryPaths = normalizeGalleryUrls(
+          serviceData.gallery_urls,
+        ).map(toStoragePath);
+        let uploadedThumbnailPath = "";
+        let uploadedGalleryPaths: string[] = [];
+
         if (thumbnailChanged && thumbnailFile) {
           const { path, error } = await uploadThumbnail(
             thumbnailFile,
@@ -284,6 +329,7 @@ export function useEditServicePage(serviceId: string) {
           }
 
           nextThumbnailUrl = path;
+          uploadedThumbnailPath = toStoragePath(path);
         }
 
         if (galleryFiles.length) {
@@ -298,17 +344,39 @@ export function useEditServicePage(serviceId: string) {
           }
 
           nextGalleryUrls = [...nextGalleryUrls, ...paths];
+          uploadedGalleryPaths = paths.map(toStoragePath).filter(Boolean);
         }
 
-        const { error: imageUpdateError } = await updateServiceImages(
-          serviceData.id,
-          nextThumbnailUrl,
-          nextGalleryUrls,
+        try {
+          const { error: imageUpdateError } = await updateServiceImages(
+            serviceData.id,
+            nextThumbnailUrl,
+            nextGalleryUrls,
+          );
+
+          if (imageUpdateError) {
+            throw new Error("Failed to update service");
+          }
+        } catch (error) {
+          await removeStoragePaths([uploadedThumbnailPath, ...uploadedGalleryPaths]);
+          throw error;
+        }
+
+        const nextThumbnailPath = toStoragePath(nextThumbnailUrl);
+        const nextGalleryPathSet = new Set(
+          nextGalleryUrls.map(toStoragePath).filter(Boolean),
         );
+        const nextPathSet = new Set([
+          nextThumbnailPath,
+          ...Array.from(nextGalleryPathSet),
+        ]);
 
-        if (imageUpdateError) {
-          throw new Error("Failed to update service");
-        }
+        const removedPaths = [
+          originalThumbnailPath,
+          ...originalGalleryPaths,
+        ].filter((path) => Boolean(path) && !nextPathSet.has(path));
+
+        await removeStoragePaths(removedPaths);
       }
 
       const { error: updateError } = await updateService(serviceData.id, {

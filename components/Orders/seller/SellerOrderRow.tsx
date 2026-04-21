@@ -4,14 +4,15 @@ import Link from "next/link";
 import {
   FiMessageSquare,
   FiEye,
-  FiCheck,
   FiSend,
   FiRefreshCcw,
-  FiXCircle,
   FiClock,
   FiDownload,
 } from "react-icons/fi";
 import OrderStatusBadge from "@/components/Orders/OrderStatusBadge";
+import OrderStatusSelect, {
+  type AllowedOrderStatus,
+} from "@/components/Orders/OrderStatusSelect";
 import {
   formatDate,
   normalizeStatus,
@@ -21,26 +22,29 @@ import { formatPrice } from "@/utils/format";
 
 type SellerOrderRowProps = {
   order: EnrichedOrder;
-  onAccept: (order: EnrichedOrder) => void;
-  isAccepting?: boolean;
+  currentUserId: string;
+  onStatusChange: (orderId: string, status: AllowedOrderStatus) => Promise<{ success: boolean }>;
   onDeliver: (order: EnrichedOrder) => void;
   onRequestExtension: (order: EnrichedOrder) => void;
-  onCancel: (order: EnrichedOrder) => void;
   onRevision: (order: EnrichedOrder) => void;
   onViewDetails: (order: EnrichedOrder) => void;
+  // kept for backward compat — no longer used for Accept
+  onAccept?: (order: EnrichedOrder) => void;
+  isAccepting?: boolean;
+  onCancel?: (order: EnrichedOrder) => void;
 };
 
 export default function SellerOrderRow({
   order,
-  onAccept,
-  isAccepting = false,
+  currentUserId,
+  onStatusChange,
   onDeliver,
   onRequestExtension,
-  onCancel,
   onRevision,
   onViewDetails,
 }: SellerOrderRowProps) {
   const status = normalizeStatus(order.status);
+  const isSeller = order.seller_id === currentUserId;
   const canMessage = [
     "pending",
     "in_progress",
@@ -92,27 +96,15 @@ export default function SellerOrderRow({
       </td>
       <td className="px-4 py-4">
         <div className="flex items-center justify-end gap-2">
-          {/* Contextual Actions */}
-          {status === "pending" && (
-            <>
-              <button
-                type="button"
-                disabled={isAccepting}
-                onClick={() => onAccept(order)}
-                className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-green-700"
-              >
-                <FiCheck className="size-3" />
-                {isAccepting ? "Accepting..." : "Accept Order"}
-              </button>
-              <button
-                onClick={() => onCancel(order)}
-                className="flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100"
-              >
-                <FiXCircle className="size-3" /> Cancel
-              </button>
-            </>
-          )}
+          {/* Status dropdown — replaces the Accept button */}
+          <OrderStatusSelect
+            orderId={order.id}
+            currentStatus={order.status ?? "pending"}
+            isSeller={isSeller}
+            onChange={onStatusChange}
+          />
 
+          {/* Contextual workflow actions (deliver, extension, revision) */}
           {status === "in_progress" && (
             <>
               <button
@@ -125,7 +117,7 @@ export default function SellerOrderRow({
                 onClick={() => onRequestExtension(order)}
                 className="flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-100"
               >
-                <FiClock className="size-3" /> Request Extension
+                <FiClock className="size-3" /> Extension
               </button>
             </>
           )}
@@ -139,7 +131,7 @@ export default function SellerOrderRow({
             </button>
           )}
 
-          {/* Standard Actions */}
+          {/* Standard utility actions */}
           <button
             onClick={() => onViewDetails(order)}
             className="flex items-center gap-1 rounded-lg border border-(--border-color) bg-(--bg-card) px-3 py-1.5 text-xs font-bold text-(--text-secondary) hover:bg-(--hover-bg)"
