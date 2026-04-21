@@ -5,7 +5,9 @@ import { useState } from "react";
 import { useOrdersFilters } from "@/hooks/orders/useOrdersFilters";
 import { useOrdersPagination } from "@/hooks/orders/useOrdersPagination";
 import { useOrdersActions } from "@/hooks/orders/useOrdersData";
+import { useOrdersStore } from "@/hooks/orders/store";
 import { type EnrichedOrder } from "@/hooks/orders/types";
+import { type AllowedOrderStatus } from "@/components/Orders/OrderStatusSelect";
 
 import SellerOrderRow from "./SellerOrderRow";
 import SellerOrderCard from "./SellerOrderCard";
@@ -14,7 +16,6 @@ import CancelOrderModal from "../modals/CancelOrderModal";
 import RevisionModal from "../modals/RevisionModal";
 import OrderDetailsModal from "../modals/OrderDetailsModal";
 import RequestExtensionModal from "../modals/RequestExtensionModal";
-import AcceptOrderModal from "../modals/AcceptOrderModal";
 
 export default function SellerOrdersList() {
   const { filteredOrders } = useOrdersFilters();
@@ -27,37 +28,24 @@ export default function SellerOrdersList() {
     setItemsPerPage,
   } = useOrdersPagination();
   const {
-    acceptOrder,
     deliverOrder,
     submitRevision,
     cancelOrder,
     requestExtension,
+    changeOrderStatus,
   } = useOrdersActions("seller");
 
-  const [selectedOrder, setSelectedOrder] = useState<EnrichedOrder | null>(
-    null,
-  );
+  const currentUserId = useOrdersStore((s) => s.currentUserId);
+
+  const [selectedOrder, setSelectedOrder] = useState<EnrichedOrder | null>(null);
   const [modalType, setModalType] = useState<
-    | "accept"
-    | "deliver"
-    | "cancel"
-    | "revision"
-    | "details"
-    | "extension"
-    | null
+    "deliver" | "cancel" | "revision" | "details" | "extension" | null
   >(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
 
   const openModal = (
     order: EnrichedOrder,
-    type:
-      | "accept"
-      | "deliver"
-      | "cancel"
-      | "revision"
-      | "details"
-      | "extension",
+    type: "deliver" | "cancel" | "revision" | "details" | "extension",
   ) => {
     setSelectedOrder(order);
     setModalType(type);
@@ -79,12 +67,12 @@ export default function SellerOrdersList() {
     }
   };
 
-  const handleAccept = async () => {
-    if (!selectedOrder) return;
-
-    setAcceptingOrderId(selectedOrder.id);
-    await handleAction(() => acceptOrder(selectedOrder.id));
-    setAcceptingOrderId(null);
+  /** Called by OrderStatusSelect in both Row and Card */
+  const handleStatusChange = async (
+    orderId: string,
+    status: AllowedOrderStatus,
+  ): Promise<{ success: boolean }> => {
+    return changeOrderStatus(orderId, status);
   };
 
   if (filteredOrders.length === 0) {
@@ -165,11 +153,10 @@ export default function SellerOrdersList() {
                 <SellerOrderRow
                   key={order.id}
                   order={order}
-                  isAccepting={acceptingOrderId === order.id}
-                  onAccept={(currentOrder) => openModal(currentOrder, "accept")}
+                  currentUserId={currentUserId}
+                  onStatusChange={handleStatusChange}
                   onDeliver={(o) => openModal(o, "deliver")}
                   onRequestExtension={(o) => openModal(o, "extension")}
-                  onCancel={(o) => openModal(o, "cancel")}
                   onRevision={(o) => openModal(o, "revision")}
                   onViewDetails={(o) => openModal(o, "details")}
                 />
@@ -185,11 +172,10 @@ export default function SellerOrdersList() {
           <SellerOrderCard
             key={order.id}
             order={order}
-            isAccepting={acceptingOrderId === order.id}
-            onAccept={(currentOrder) => openModal(currentOrder, "accept")}
+            currentUserId={currentUserId}
+            onStatusChange={handleStatusChange}
             onDeliver={(o) => openModal(o, "deliver")}
             onRequestExtension={(o) => openModal(o, "extension")}
-            onCancel={(o) => openModal(o, "cancel")}
             onRevision={(o) => openModal(o, "revision")}
             onViewDetails={(o) => openModal(o, "details")}
           />
@@ -260,14 +246,6 @@ export default function SellerOrdersList() {
       )}
 
       {/* Modals */}
-      <AcceptOrderModal
-        open={modalType === "accept"}
-        loading={isActionLoading}
-        orderNumber={selectedOrder?.order_number || ""}
-        onClose={closeModal}
-        onConfirm={() => void handleAccept()}
-      />
-
       <DeliverModal
         open={modalType === "deliver"}
         loading={isActionLoading}

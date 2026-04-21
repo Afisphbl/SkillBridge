@@ -7,11 +7,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { getSession } from "@/services/supabase/auth";
 import { updateServiceImages } from "@/services/supabase/serviceImageDb";
 import {
+  duplicateServiceGalleryImages,
+  duplicateServiceImage,
   uploadGalleryImages,
   uploadThumbnail,
 } from "@/services/supabase/serviceImagesStorage";
 import { getServiceById, createService } from "@/services/supabase/servicesApi";
-import type { ServiceFormData, ServiceFormErrors } from "@/components/createService/types";
+import type {
+  ServiceFormData,
+  ServiceFormErrors,
+} from "@/components/createService/types";
 
 type ServiceRecord = {
   id: string;
@@ -163,7 +168,9 @@ export function useDuplicateServicePage(serviceId: string) {
       }
 
       const normalizedService = service as ServiceRecord;
-      const normalizedGallery = normalizeGalleryUrls(normalizedService.gallery_urls);
+      const normalizedGallery = normalizeGalleryUrls(
+        normalizedService.gallery_urls,
+      );
 
       setServiceData(normalizedService);
       setFormData({
@@ -234,7 +241,9 @@ export function useDuplicateServicePage(serviceId: string) {
         setGalleryUrls((current) => current.filter((_, i) => i !== index));
       } else {
         const newFileIndex = index - galleryUrls.length;
-        setGalleryFiles((current) => current.filter((_, i) => i !== newFileIndex));
+        setGalleryFiles((current) =>
+          current.filter((_, i) => i !== newFileIndex),
+        );
       }
 
       setGalleryChanged(true);
@@ -268,19 +277,20 @@ export function useDuplicateServicePage(serviceId: string) {
 
     try {
       // 1. Core Service Creation
-      const { service: createdService, error: createError } = await createService({
-        seller_id: sellerId,
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        category: formData.category.trim(),
-        subcategory: formData.subcategory.trim(),
-        tags: formData.tags,
-        price: Number(formData.price),
-        delivery_time: Number(formData.delivery_time),
-        status: "draft",
-        thumbnail_url: thumbnailUrl,
-        gallery_urls: galleryUrls,
-      });
+      const { service: createdService, error: createError } =
+        await createService({
+          seller_id: sellerId,
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          category: formData.category.trim(),
+          subcategory: formData.subcategory.trim(),
+          tags: formData.tags,
+          price: Number(formData.price),
+          delivery_time: Number(formData.delivery_time),
+          status: "draft",
+          thumbnail_url: null,
+          gallery_urls: [],
+        });
 
       if (createError || !createdService?.id) {
         throw new Error("Failed to duplicate service");
@@ -288,13 +298,12 @@ export function useDuplicateServicePage(serviceId: string) {
 
       const newServiceId = createdService.id;
 
-      // 2. Diff Based Image Overrides
-      let nextThumbnailUrl = thumbnailUrl;
-      let nextGalleryUrls = [...galleryUrls];
-      const hasImageChanges = thumbnailChanged || galleryChanged;
+      // 2. Always assign this duplicate its own thumbnail + gallery files.
+      let nextThumbnailUrl = "";
+      let nextGalleryUrls: string[] = [];
 
-      if (hasImageChanges) {
-        if (thumbnailChanged && thumbnailFile) {
+      if (thumbnailChanged) {
+        if (thumbnailFile) {
           const { path, error } = await uploadThumbnail(
             thumbnailFile,
             sellerId,
@@ -302,44 +311,82 @@ export function useDuplicateServicePage(serviceId: string) {
           );
 
           if (error || !path) {
-            throw new Error("Image upload failed");
+            throw new Error(
+              `Image processing failed: ${
+                error?.message || "thumbnail upload failed"
+              }`,
+            );
           }
 
           nextThumbnailUrl = path;
         }
-
-        if (galleryFiles.length) {
-          const { paths, error } = await uploadGalleryImages(
-            galleryFiles,
-            sellerId,
-            newServiceId,
-          );
-
-          if (error) {
-            throw new Error("Image upload failed");
-          }
-
-          nextGalleryUrls = [...nextGalleryUrls, ...paths];
-        }
-
-        const { error: imageUpdateError } = await updateServiceImages(
+      } else if (thumbnailUrl) {
+        const { path, error } = await duplicateServiceImage(
+          thumbnailUrl,
+          sellerId,
           newServiceId,
-          nextThumbnailUrl,
-          nextGalleryUrls,
+          "thumbnail",
         );
 
-        if (imageUpdateError) {
-          throw new Error("Failed to update service images");
+        if (error || !path) {
+          throw new Error(
+            `Image processing failed: ${error || "thumbnail copy failed"}`,
+          );
         }
+
+        nextThumbnailUrl = path;
+      }
+
+      if (galleryUrls.length) {
+        const { paths, error } = await duplicateServiceGalleryImages(
+          galleryUrls,
+          sellerId,
+          newServiceId,
+        );
+
+        if (error) {
+          throw new Error(`Image processing failed: ${error}`);
+        }
+
+        nextGalleryUrls = paths;
+      }
+
+      if (galleryFiles.length) {
+        const { paths, error } = await uploadGalleryImages(
+          galleryFiles,
+          sellerId,
+          newServiceId,
+        );
+
+        if (error) {
+          throw new Error(`Image processing failed: ${error}`);
+        }
+
+        nextGalleryUrls = [...nextGalleryUrls, ...paths];
+      }
+
+      const { error: imageUpdateError } = await updateServiceImages(
+        newServiceId,
+        nextThumbnailUrl,
+        nextGalleryUrls,
+      );
+
+      if (imageUpdateError) {
+        throw new Error(
+          `Image processing failed: ${
+            imageUpdateError.message || "failed to update service images"
+          }`,
+        );
       }
 
       toast.success("Service duplicated successfully");
       router.push("/seller/services");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to duplicate service";
+      const message =
+        error instanceof Error ? error.message : "Failed to duplicate service";
 
-      if (message === "Image upload failed") {
-        toast.error("Image upload failed");
+      if (message.startsWith("Image processing failed:")) {
+        toast.error(message);
       } else {
         toast.error("Failed to duplicate service");
       }

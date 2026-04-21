@@ -10,6 +10,7 @@ import {
   submitRevision,
   requestOrderExtension,
   cancelOrder as cancelOrderService,
+  updateOrderStatus,
 } from "@/services/supabase/orderServices";
 import { supabase } from "@/services/supabase/client";
 import { getServicesByIds } from "@/services/supabase/servicesApi";
@@ -364,6 +365,67 @@ export function useOrdersActions(routeScope?: OrdersRouteScope) {
     [fetchOrders, optimisticOrderPatch],
   );
 
+  const handleChangeOrderStatus = useCallback(
+    async (orderId: string, status: string) => {
+      const targetOrder = orders.find((order) => order.id === orderId);
+
+      if (!targetOrder) {
+        toast.error("Order not found.");
+        return { success: false };
+      }
+
+      // Permission check — only the seller who owns the order may change its status
+      if (targetOrder.seller_id !== currentUserId) {
+        toast.error("You do not have permission to update this order.");
+        return { success: false };
+      }
+
+      // Build the optimistic timestamp patch to mirror what the API does
+      const now = new Date().toISOString();
+      const timestampPatch: Partial<OrderRecord> = {};
+      if (status === "in_progress") timestampPatch.started_at = now;
+      if (status === "delivered") timestampPatch.delivered_at = now;
+      if (status === "completed") timestampPatch.completed_at = now;
+      if (status === "cancelled") timestampPatch.cancelled_at = now;
+
+      // Optimistic update — UI reflects the change immediately
+      optimisticOrderPatch(orderId, { status, ...timestampPatch });
+
+      const { success, error, order } = await updateOrderStatus(orderId, status);
+
+      if (!success) {
+        toast.error(
+          toErrorMessage(error, "Failed to update order status. Please try again."),
+        );
+        // Roll back by re-fetching
+        void fetchOrders();
+        return { success: false };
+      }
+
+      if (order) {
+        replaceOrderFromServer(order as OrderRecord & { id: string });
+      }
+
+      const statusLabels: Record<string, string> = {
+        accepted: "Order accepted!",
+        in_progress: "Order is now in progress.",
+        delivered: "Order marked as delivered.",
+        completed: "Order completed!",
+        cancelled: "Order cancelled.",
+      };
+      toast.success(statusLabels[status] ?? "Order status updated.");
+
+      return { success: true };
+    },
+    [
+      currentUserId,
+      fetchOrders,
+      optimisticOrderPatch,
+      orders,
+      replaceOrderFromServer,
+    ],
+  );
+
   return {
     fetchOrders,
     cancelOrder,
@@ -371,6 +433,7 @@ export function useOrdersActions(routeScope?: OrdersRouteScope) {
     deliverOrder: handleDeliverOrder,
     submitRevision: handleSubmitRevision,
     requestExtension: handleRequestExtension,
+    changeOrderStatus: handleChangeOrderStatus,
   };
 }
 
