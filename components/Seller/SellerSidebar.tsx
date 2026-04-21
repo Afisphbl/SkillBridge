@@ -1,0 +1,264 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import {
+  FiHome,
+  FiLogOut,
+  FiMessageSquare,
+  FiPackage,
+  FiSettings,
+  FiUser,
+  FiX,
+} from "react-icons/fi";
+import { LuLayoutDashboard } from "react-icons/lu";
+import { FiBriefcase } from "react-icons/fi";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/utils/helpers";
+import {
+  SELLER_PRIMARY_LINKS,
+  SELLER_SECONDARY_LINKS,
+} from "@/utils/constants";
+
+const iconMap = {
+  "/seller/home": FiHome,
+  "/seller/dashboard": LuLayoutDashboard,
+  "/seller/services": FiBriefcase,
+  "/seller/orders": FiPackage,
+  "/seller/messages": FiMessageSquare,
+  "/seller/profile": FiUser,
+  "/seller/settings": FiSettings,
+};
+
+function isActivePath(pathname: string, href: string) {
+  if (pathname === href) return true;
+  return pathname.startsWith(`${href}/`);
+}
+
+export default function SellerSidebar({
+  mobileOpen,
+  onClose,
+}: {
+  mobileOpen: boolean;
+  onClose: () => void;
+}) {
+  const pathname = usePathname();
+  const { handleSignOut, submitting } = useAuth();
+  const [viewport, setViewport] = useState<
+    "tiny" | "mobile" | "desktop" | null
+  >(() => {
+    if (typeof window === "undefined") return null;
+    if (window.matchMedia("(max-width: 399px)").matches) return "tiny";
+    if (window.matchMedia("(max-width: 767px)").matches) return "mobile";
+    return "desktop";
+  });
+
+  useEffect(() => {
+    const tinyQuery = window.matchMedia("(max-width: 399px)");
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+
+    const updateViewportFromQueries = () => {
+      if (tinyQuery.matches) {
+        setViewport("tiny");
+        return;
+      }
+
+      if (mobileQuery.matches) {
+        setViewport("mobile");
+        return;
+      }
+
+      setViewport("desktop");
+    };
+
+    updateViewportFromQueries();
+    tinyQuery.addEventListener("change", updateViewportFromQueries);
+    mobileQuery.addEventListener("change", updateViewportFromQueries);
+
+    return () => {
+      tinyQuery.removeEventListener("change", updateViewportFromQueries);
+      mobileQuery.removeEventListener("change", updateViewportFromQueries);
+    };
+  }, []);
+
+  if (viewport === null) {
+    return null;
+  }
+
+  const renderLink = (item: { href: string; label: string }) => {
+    const Icon = iconMap[item.href as keyof typeof iconMap] ?? FiHome;
+    const active = isActivePath(pathname, item.href);
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onClose}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-(--text-secondary) hover:bg-(--sidebar-item-hover) hover:text-(--text-primary)",
+          active &&
+            "bg-(--sidebar-item-active) text-(--color-primary) ring-1 ring-inset ring-(--border-color)",
+        )}
+        aria-current={active ? "page" : undefined}
+      >
+        <Icon className="size-4" />
+        <span>{item.label}</span>
+      </Link>
+    );
+  };
+
+  const navItems = (
+    <nav className="space-y-1.5">
+      {SELLER_PRIMARY_LINKS.map(renderLink)}
+      <div className="my-3 h-px w-full bg-(--border-color)" />
+      {SELLER_SECONDARY_LINKS.map(renderLink)}
+    </nav>
+  );
+
+  const brand = (
+    <div className="mb-8 border-b border-(--border-color) pb-6">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="grid size-11 place-items-center overflow-hidden rounded-full ring-2 ring-(--border-color)">
+            <Image
+              src="/SkillBridge.png"
+              alt="SkillBridge logo"
+              width={44}
+              height={44}
+              className="size-11 rounded-full object-cover"
+            />
+          </div>
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-black tracking-[0.12em] text-(--color-primary)">
+              SKILLBRIDGE
+            </h1>
+            <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-(--text-muted)">
+              Freelance Hub
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 grid size-8 place-items-center rounded-md text-(--text-muted) hover:bg-(--hover-bg) md:hidden"
+          aria-label="Close sidebar"
+        >
+          <FiX className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
+
+  if (viewport === "desktop") {
+    return (
+      <aside className="hidden border-r border-(--border-color) bg-(--bg-sidebar) md:block md:h-full md:w-full md:overflow-hidden">
+        <div className="flex h-full flex-col px-5 py-6">
+          {brand}
+          {navItems}
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={submitting}
+            className="mt-auto flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-(--color-primary) hover:bg-(--hover-bg) disabled:opacity-60"
+          >
+            <FiLogOut className="size-4" />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
+  if (viewport === "tiny") {
+    return (
+      <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-(--border-color) bg-(--bg-sidebar) px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+        <nav className="grid grid-cols-5 gap-1">
+          {SELLER_PRIMARY_LINKS.map((item) => {
+            const Icon = iconMap[item.href as keyof typeof iconMap] ?? FiHome;
+            const active = isActivePath(pathname, item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "relative grid place-items-center rounded-md py-2 text-(--text-muted) transition-colors duration-200 ease-in-out",
+                  active
+                    ? "text-(--color-primary)"
+                    : "hover:text-(--text-secondary)",
+                )}
+                aria-label={item.label}
+                aria-current={active ? "page" : undefined}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none absolute inset-x-2 top-1 bottom-1 rounded-full transition duration-200 ease-in-out",
+                    active
+                      ? "bg-(--sidebar-item-active) shadow-[0_8px_18px_-14px_var(--color-primary)] -translate-y-2"
+                      : "opacity-0 translate-y-0",
+                  )}
+                  aria-hidden
+                />
+                <span
+                  className={cn(
+                    "relative z-10 grid place-items-center transition-transform duration-200 ease-in-out will-change-transform",
+                    active
+                      ? "-translate-y-2 scale-110 text-(--text-primary)"
+                      : "translate-y-0 scale-100",
+                  )}
+                >
+                  <Icon className="size-4" />
+                </span>
+                <span
+                  className={cn(
+                    "pointer-events-none absolute -bottom-0.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-(--color-primary) transition-all duration-200 ease-in-out",
+                    active ? "scale-100 opacity-100" : "scale-75 opacity-0",
+                  )}
+                  aria-hidden
+                />
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+    );
+  }
+
+  return (
+    <>
+      <div
+        className={cn(
+          "fixed inset-0 z-40 bg-(--modal-overlay) transition-opacity",
+          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+        onClick={onClose}
+        aria-hidden
+      />
+
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-55 border-r border-(--border-color) bg-(--bg-sidebar) transition-transform",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        <div className="flex h-full flex-col px-5 py-6">
+          {brand}
+          {navItems}
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={submitting}
+            className="mt-auto flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-(--color-primary) hover:bg-(--hover-bg) disabled:opacity-60"
+          >
+            <FiLogOut className="size-4" />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
+  );
+}

@@ -5,9 +5,7 @@ import SearchBar from "./SearchBar";
 import { useMarketplaceFilters } from "@/hooks/marketplace/useMarketplaceFilters";
 import { useMobileFilters } from "@/hooks/marketplace/useMobileFilters";
 import { useMarketplaceSearch } from "@/hooks/marketplace/useMarketplaceSearch";
-import {
-  useMarketplaceSorting,
-} from "@/hooks/marketplace/useMarketplaceSorting";
+import { useMarketplaceSorting } from "@/hooks/marketplace/useMarketplaceSorting";
 import type { MarketplaceFilters, SortValue } from "@/hooks/marketplace/types";
 
 function ActiveFilterChip({
@@ -30,7 +28,8 @@ function ActiveFilterChip({
 }
 
 export default function MarketplaceHeader() {
-  const { query, searching, setQuery, clearQuery } = useMarketplaceSearch();
+  const { query, searching, setQuery, submitQuery, clearQuery } =
+    useMarketplaceSearch();
   const { sortBy, setSortBy } = useMarketplaceSorting();
   const { activeFilterChips, removeFilter } = useMarketplaceFilters();
   const { toggleFilters } = useMobileFilters();
@@ -77,6 +76,7 @@ export default function MarketplaceHeader() {
         value={query}
         searching={searching}
         onChange={setQuery}
+        onSubmit={submitQuery}
         onClear={clearQuery}
       />
 
@@ -86,7 +86,9 @@ export default function MarketplaceHeader() {
             <ActiveFilterChip
               key={chip.key}
               label={chip.label}
-              onRemove={() => removeFilter(chip.key as keyof MarketplaceFilters)}
+              onRemove={() =>
+                removeFilter(chip.key as keyof MarketplaceFilters)
+              }
             />
           ))}
         </div>

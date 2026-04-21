@@ -1,45 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
-import ProtectedRoute from "@/components/Auth/ProtectedRoute";
-import Navbar from "@/components/UI/Navbar";
-import Sidebar from "@/components/UI/Sidebar";
 import Footer from "@/components/UI/Footer";
+import SellerHeader from "@/components/Seller/SellerHeader";
+import SellerSidebar from "@/components/Seller/SellerSidebar";
+import SellerRouteGuard from "@/components/Seller/SellerRouteGuard";
 
-const SidebarComponent = Sidebar as React.ComponentType<{
-  mobileOpen: boolean;
-  onClose: () => void;
-}>;
-
-const NavbarComponent = Navbar as React.ComponentType<{
-  onMenuToggle: () => void;
-}>;
-
-export default function ProtectedLayout({
+export default function SellerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const pathname = usePathname();
-
-  if (pathname.startsWith("/seller")) {
-    return <ProtectedRoute>{children}</ProtectedRoute>;
-  }
 
   return (
-    <ProtectedRoute>
+    <SellerRouteGuard>
       <div className="h-dvh overflow-hidden bg-(--bg-primary) md:grid md:grid-cols-[250px_minmax(0,1fr)]">
-        <SidebarComponent
+        <SellerSidebar
           mobileOpen={mobileSidebarOpen}
           onClose={() => setMobileSidebarOpen(false)}
         />
+
         <div className="flex h-full min-h-0 min-w-0 flex-col">
-          <NavbarComponent
+          <SellerHeader
             onMenuToggle={() => setMobileSidebarOpen((open) => !open)}
           />
-          <main className="min-h-0 flex-1 overflow-y-auto  ">
+
+          <main className="min-h-0 flex-1 overflow-y-auto">
             <div className="flex min-h-full flex-col">
               <div className="flex-1 p-4 pb-20 md:p-8">{children}</div>
               <Footer />
@@ -47,6 +34,6 @@ export default function ProtectedLayout({
           </main>
         </div>
       </div>
-    </ProtectedRoute>
+    </SellerRouteGuard>
   );
 }

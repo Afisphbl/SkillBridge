@@ -14,8 +14,13 @@ import {
   signUpWithEmail,
   uploadAvatar,
 } from "@/services/supabase/auth";
+import { getUserById } from "@/services/supabase/userApi";
 import type { UserRole } from "@/types/user";
-import { AUTH_COOKIE_KEY } from "@/utils/constants";
+import {
+  AUTH_COOKIE_KEY,
+  SELLER_HOME_ROUTE,
+  USER_ROLE_COOKIE_KEY,
+} from "@/utils/constants";
 import { mapSupabaseError } from "@/lib/validators/authSchemas";
 
 type SignupInput = {
@@ -38,6 +43,30 @@ function writeAuthCookie(token: string | null, rememberMe = true) {
   document.cookie = `${AUTH_COOKIE_KEY}=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
 }
 
+function resolveRole(rawRole: unknown): UserRole {
+  if (rawRole === "buyer" || rawRole === "seller" || rawRole === "both") {
+    return rawRole;
+  }
+
+  return "buyer";
+}
+
+function writeRoleCookie(role: UserRole | null, rememberMe = true) {
+  if (typeof document === "undefined") return;
+
+  if (!role) {
+    document.cookie = `${USER_ROLE_COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax`;
+    return;
+  }
+
+  const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
+  document.cookie = `${USER_ROLE_COOKIE_KEY}=${role}; path=/; max-age=${maxAge}; SameSite=Lax`;
+}
+
+function getRouteForRole(role: UserRole) {
+  return role === "seller" ? SELLER_HOME_ROUTE : "/home";
+}
+
 export function useAuth() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
@@ -48,20 +77,59 @@ export function useAuth() {
     let mounted = true;
 
     async function initializeSession() {
-      const { data } = await getSession();
-      if (!mounted) return;
+      try {
+        const { data } = await getSession();
+        if (!mounted) return;
 
-      setSession(data.session);
-      writeAuthCookie(data.session?.access_token ?? null, true);
-      setLoadingSession(false);
+        setSession(data.session);
+        writeAuthCookie(data.session?.access_token ?? null, true);
+
+        if (!data.session?.user?.id) {
+          writeRoleCookie(null);
+          return;
+        }
+
+        const { data: profile } = await getUserById(data.session.user.id);
+        if (!mounted) return;
+
+        const userRole = resolveRole(profile?.role);
+        writeRoleCookie(userRole, true);
+      } catch (error) {
+        if (!mounted) return;
+
+        setSession(null);
+        writeAuthCookie(null);
+        writeRoleCookie(null);
+        console.error("Failed to initialize auth session", error);
+      } finally {
+        if (mounted) {
+          setLoadingSession(false);
+        }
+      }
     }
 
     initializeSession();
 
-    const { data: listener } = onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      writeAuthCookie(nextSession?.access_token ?? null, true);
-    });
+    const { data: listener } = onAuthStateChange(
+      async (_event, nextSession) => {
+        setSession(nextSession);
+        writeAuthCookie(nextSession?.access_token ?? null, true);
+        setLoadingSession(false);
+
+        if (!nextSession?.user?.id) {
+          writeRoleCookie(null);
+          return;
+        }
+
+        try {
+          const { data: profile } = await getUserById(nextSession.user.id);
+          writeRoleCookie(resolveRole(profile?.role), true);
+        } catch (error) {
+          writeRoleCookie(null);
+          console.error("Failed to sync auth role cookie", error);
+        }
+      },
+    );
 
     return () => {
       mounted = false;
@@ -91,9 +159,19 @@ export function useAuth() {
           }
         }
 
+        if (!data.user) {
+          const message = "Failed to resolve user after sign in.";
+          toast.error(message);
+          return { success: false, message };
+        }
+
+        const { data: profile } = await getUserById(data.user.id);
+        const userRole = resolveRole(profile?.role);
+
         writeAuthCookie(data.session?.access_token ?? null, rememberMe);
+        writeRoleCookie(userRole, rememberMe);
         toast.success("Login successful");
-        router.push("/home");
+        router.push(getRouteForRole(userRole));
         return { success: true };
       } catch {
         const message = "Network error. Please try again.";
@@ -145,9 +223,10 @@ export function useAuth() {
 
         const { data: sessionData } = await getSession();
         writeAuthCookie(sessionData.session?.access_token ?? null, true);
+        writeRoleCookie(role, true);
 
         toast.success("Account created successfully");
-        router.push("/home");
+        router.push(getRouteForRole(role));
         return { success: true };
       } catch {
         const message = "Network error. Please try again.";
@@ -170,6 +249,7 @@ export function useAuth() {
       }
 
       writeAuthCookie(null);
+      writeRoleCookie(null);
       toast.success("Signed out successfully");
       router.push("/login");
     } finally {
