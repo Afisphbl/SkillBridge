@@ -410,6 +410,20 @@ export const updateOrderStatus = async (orderId, status, extraUpdates = {}) => {
   const normalizedStatus = String(status).toLowerCase();
   const now = new Date().toISOString();
 
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.id) {
+    return {
+      success: false,
+      error: authError || { message: "Authentication is required." },
+    };
+  }
+
+  const currentUserId = user.id;
+
   const statusTimestamps = {
     in_progress: {
       started_at: now,
@@ -425,11 +439,17 @@ export const updateOrderStatus = async (orderId, status, extraUpdates = {}) => {
     },
   };
 
-  return await updateOrder(orderId, {
-    status: normalizedStatus,
-    ...(statusTimestamps[normalizedStatus] || {}),
-    ...extraUpdates,
-  });
+  return await updateOrder(
+    orderId,
+    {
+      status: normalizedStatus,
+      ...(statusTimestamps[normalizedStatus] || {}),
+      ...extraUpdates,
+    },
+    {
+      seller_id: currentUserId,
+    },
+  );
 };
 
 /**
@@ -493,7 +513,9 @@ export const acceptOrder = async (orderId) => {
     if (existingOrder.seller_id !== user.id) {
       return {
         success: false,
-        error: { message: "Only the seller who owns this order can accept it." },
+        error: {
+          message: "Only the seller who owns this order can accept it.",
+        },
       };
     }
 
