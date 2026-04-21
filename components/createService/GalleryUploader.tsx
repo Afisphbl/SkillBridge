@@ -9,21 +9,26 @@ const MAX_GALLERY = 5;
 export default function GalleryUploader({
   files,
   previewUrls,
+  currentCount,
+  maxGallery = MAX_GALLERY,
   onAdd,
   onRemove,
 }: {
   files: File[];
   previewUrls: string[];
+  currentCount?: number;
+  maxGallery?: number;
   onAdd: (files: File[]) => void;
   onRemove: (index: number) => void;
 }) {
   const accept = ACCEPTED_IMAGE_TYPES.join(",");
-  const remaining = Math.max(0, MAX_GALLERY - files.length);
+  const totalCount = currentCount ?? files.length;
+  const remaining = Math.max(0, maxGallery - totalCount);
 
   return (
     <section className="space-y-2">
       <h3 className="text-sm font-semibold text-(--text-secondary)">
-        Gallery Images ({files.length}/{MAX_GALLERY})
+        Gallery Images ({totalCount}/{maxGallery})
       </h3>
 
       <label className="block cursor-pointer rounded-xl border border-dashed border-(--border-color) bg-(--bg-secondary) p-3 hover:border-(--border-hover)">

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import {
   FiArrowLeft,
@@ -13,9 +14,11 @@ import {
 import Button from "@/components/UI/Button";
 import Loader from "@/components/UI/Loader";
 import { useAuth } from "@/hooks/useAuth";
+import { deleteServiceFolder } from "@/services/supabase/serviceImagesStorage";
 import {
   deleteService,
   getSellerServices,
+  getServiceById,
   updateServiceStatus,
 } from "@/services/supabase/servicesApi";
 import BulkActionsBar from "./BulkActionsBar";
@@ -82,6 +85,7 @@ function filterServices(list: ServiceItem[], filters: ServiceFilters) {
 }
 
 export default function SellerServicesPage() {
+  const router = useRouter();
   const { session } = useAuth();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
@@ -191,6 +195,26 @@ export default function SellerServicesPage() {
   const removeOne = async (serviceId: string) => {
     setPending(true);
     try {
+      const sellerId = session?.user?.id;
+      if (!sellerId) throw new Error("Unauthorized");
+
+      const { service, error: fetchError } = await getServiceById(serviceId);
+      if (fetchError || !service) {
+        toast.error("Service does not exist");
+        return;
+      }
+
+      if (service.seller_id !== sellerId) {
+        toast.error("Unauthorized");
+        return;
+      }
+
+      const { error: storageError } = await deleteServiceFolder(sellerId, serviceId);
+      if (storageError) {
+        toast.error("Failed to delete service images");
+        return;
+      }
+
       const { error } = await deleteService(serviceId);
       if (error) {
         toast.error(error.message || "Failed to delete service");
@@ -204,30 +228,16 @@ export default function SellerServicesPage() {
         return next;
       });
       setServiceToDelete(null);
-      toast.success("Service deleted");
+      toast.success("Service deleted successfully");
+    } catch {
+      toast.error("Failed to delete service");
     } finally {
       setPending(false);
     }
   };
 
   const duplicateOne = async (serviceId: string) => {
-    const service = services.find((item) => item.id === serviceId);
-    if (!service) return;
-
-    const next: ServiceItem = {
-      ...service,
-      id: `copy-${Date.now()}-${Math.round(Math.random() * 10000)}`,
-      title: `${service.title} (Copy)`,
-      status: "draft",
-      createdAt: new Date().toISOString(),
-      orders: 0,
-      views: 0,
-      rating: 0,
-      conversionRate: 0,
-    };
-
-    setServices((current) => [next, ...current]);
-    toast.success("Service duplicated as draft");
+    router.push(`/seller/services/duplicate/${serviceId}`);
   };
 
   const updateMany = async (status: ServiceStatus) => {
@@ -276,8 +286,23 @@ export default function SellerServicesPage() {
 
     setPending(true);
     try {
+      const sellerId = session?.user?.id;
+      if (!sellerId) throw new Error("Unauthorized");
+
       const results = await Promise.all(
-        ids.map((serviceId) => deleteService(serviceId)),
+        ids.map(async (serviceId) => {
+          const { service, error: fetchError } = await getServiceById(serviceId);
+          if (fetchError || !service || service.seller_id !== sellerId) {
+            return { error: new Error("Unauthorized") };
+          }
+
+          const { error: storageError } = await deleteServiceFolder(sellerId, serviceId);
+          if (storageError) {
+            return { error: new Error("Storage failure") };
+          }
+
+          return deleteService(serviceId);
+        }),
       );
       const failedIds = new Set(
         results
@@ -298,8 +323,10 @@ export default function SellerServicesPage() {
           `Deleted ${ids.length - failedIds.size} of ${ids.length} services`,
         );
       } else {
-        toast.success("Selected services deleted");
+        toast.success("Selected services deleted successfully");
       }
+    } catch {
+      toast.error("Failed to delete services");
     } finally {
       setPending(false);
     }

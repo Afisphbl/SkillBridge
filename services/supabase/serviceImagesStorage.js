@@ -76,6 +76,33 @@ export async function deleteImageFromStorage(filePath) {
 }
 
 /**
+ * Delete all images in a service folder
+ */
+export async function deleteServiceFolder(sellerId, serviceId) {
+  const folderPath = `services/${sellerId}/${serviceId}`;
+  
+  const { data: files, error: listError } = await supabase.storage
+    .from(BUCKET)
+    .list(folderPath);
+
+  if (listError) {
+    return { error: listError };
+  }
+
+  if (!files || files.length === 0) {
+    return { error: null };
+  }
+
+  const filePaths = files.map((file) => `${folderPath}/${file.name}`);
+
+  const { error: removeError } = await supabase.storage
+    .from(BUCKET)
+    .remove(filePaths);
+
+  return { error: removeError };
+}
+
+/**
  * Get public URL
  */
 export function getPublicImageUrl(path) {

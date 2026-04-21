@@ -8,12 +8,14 @@ export default function ThumbnailUploader({
   file,
   previewUrl,
   error,
+  title = "Thumbnail (required)",
   onChange,
   onRemove,
 }: {
   file: File | null;
   previewUrl: string;
   error?: string;
+  title?: string;
   onChange: (file: File | null) => void;
   onRemove: () => void;
 }) {
@@ -23,9 +25,9 @@ export default function ThumbnailUploader({
     <section className="space-y-2">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-(--text-secondary)">
-          Thumbnail (required)
+          {title}
         </h3>
-        {file ? (
+        {previewUrl ? (
           <button
             type="button"
             onClick={onRemove}
