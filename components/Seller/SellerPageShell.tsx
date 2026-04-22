@@ -2,12 +2,14 @@ type SellerPageShellProps = {
   title: string;
   description: string;
   highlights: Array<{ label: string; value: string }>;
+  children?: React.ReactNode;
 };
 
 export default function SellerPageShell({
   title,
   description,
   highlights,
+  children,
 }: SellerPageShellProps) {
   return (
     <section className="space-y-6">
@@ -38,6 +40,8 @@ export default function SellerPageShell({
           </article>
         ))}
       </div>
+
+      <div className="mt-6">{children}</div>
     </section>
   );
 }

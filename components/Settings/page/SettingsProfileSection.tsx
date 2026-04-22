@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import Image from "next/image";
 import Loader from "@/components/UI/Loader";
 import Input from "@/components/UI/Input";
@@ -15,8 +16,22 @@ function useSettingsProfileSectionData() {
     setProfileSettings,
   } = useSettingsPageContext();
 
+  const completion = useMemo(() => {
+    const fields = [
+      profileSettings.fullName,
+      profileSettings.bio,
+      profileSettings.location,
+      profileSettings.skills,
+      profileSettings.professionalTitle,
+      profileSettings.avatarPreview,
+    ];
+    const filled = fields.filter((f) => Boolean(f?.trim())).length;
+    return Math.round((filled / fields.length) * 100);
+  }, [profileSettings]);
+
   return {
     actions,
+    completion,
     dirty,
     handleAvatarInput,
     profileSettings,
@@ -29,6 +44,7 @@ function useSettingsProfileSectionData() {
 export function SettingsProfileSection() {
   const {
     actions,
+    completion,
     dirty,
     handleAvatarInput,
     profileSettings,
@@ -42,6 +58,23 @@ export function SettingsProfileSection() {
       title="Profile Settings"
       subtitle="Manage your public identity, avatar, and personal details."
     >
+      <div className="mb-2 space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold uppercase tracking-widest text-(--text-muted)">
+            Profile Completion
+          </p>
+          <span className="text-xs font-black text-(--text-primary)">
+            {completion}%
+          </span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-(--bg-secondary)">
+          <div
+            className="h-full bg-blue-500 transition-all duration-500 ease-out"
+            style={{ width: `${completion}%` }}
+          />
+        </div>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
         <div className="rounded-2xl border border-(--border-color) bg-(--bg-secondary)/60 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-(--text-muted)">
@@ -101,6 +134,7 @@ export function SettingsProfileSection() {
             </label>
             <Input
               value={profileSettings.username}
+              placeholder="@username"
               onChange={(event) =>
                 setProfileSettings((current) => ({
                   ...current,
@@ -109,16 +143,64 @@ export function SettingsProfileSection() {
               }
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-xs font-semibold text-(--text-muted)">
+              Professional Title
+            </label>
+            <Input
+              value={profileSettings.professionalTitle}
+              placeholder="e.g. Senior Fullstack Engineer"
+              onChange={(event) =>
+                setProfileSettings((current) => ({
+                  ...current,
+                  professionalTitle: event.target.value,
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
             <label className="text-xs font-semibold text-(--text-muted)">
               Display name
             </label>
             <Input
               value={profileSettings.displayName}
+              placeholder="How your name appears to others"
               onChange={(event) =>
                 setProfileSettings((current) => ({
                   ...current,
                   displayName: event.target.value,
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-(--text-muted)">
+              Website
+            </label>
+            <Input
+              type="url"
+              value={profileSettings.website}
+              placeholder="https://yourwebsite.com"
+              onChange={(event) =>
+                setProfileSettings((current) => ({
+                  ...current,
+                  website: event.target.value,
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-(--text-muted)">
+              Portfolio Link
+            </label>
+            <Input
+              type="url"
+              value={profileSettings.portfolioLink}
+              placeholder="https://behance.net/portfolio"
+              onChange={(event) =>
+                setProfileSettings((current) => ({
+                  ...current,
+                  portfolioLink: event.target.value,
                 }))
               }
             />

@@ -40,10 +40,10 @@ export async function insertUser({ id, email, full_name, role, avatar }) {
 }
 
 /** Update an existing user profile */
-export async function updateUser(userId, { full_name, role, avatar, bio }) {
+export async function updateUser(userId, updates) {
   const { data, error } = await supabase
     .from("users")
-    .update({ full_name, role, avatar, bio })
+    .update(updates)
     .eq("id", userId)
     .select();
   return { data, error };
