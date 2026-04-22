@@ -16,6 +16,7 @@ export type SettingsTab =
   | "payment"
   | "privacy"
   | "account"
+  | "availability"
   | "danger";
 
 export type NotificationSettings = {
@@ -63,6 +64,9 @@ export type ProfileSettings = {
   location: string;
   skills: string;
   languages: string;
+  professionalTitle: string;
+  website: string;
+  portfolioLink: string;
   avatarPreview: string;
   avatarFile: File | null;
 };
@@ -74,6 +78,16 @@ export type SecuritySettings = {
   twoFactorEnabled: boolean;
 };
 
+export type AvailabilitySettings = {
+  workingDays: string[];
+  startTime: string;
+  endTime: string;
+  vacationMode: boolean;
+  vacationStart: string;
+  vacationEnd: string;
+  autoReply: string;
+};
+
 type PersistedSettings = {
   profileExtras: {
     username: string;
@@ -81,6 +95,9 @@ type PersistedSettings = {
     location: string;
     skills: string;
     languages: string;
+    professionalTitle: string;
+    website: string;
+    portfolioLink: string;
   };
   notifications: NotificationSettings;
   privacy: PrivacySettings;
@@ -92,6 +109,7 @@ type PersistedSettings = {
   account: {
     language: string;
   };
+  availability: AvailabilitySettings;
 };
 
 const defaultNotifications: NotificationSettings = {
@@ -139,6 +157,9 @@ const defaultProfile: ProfileSettings = {
   location: "",
   skills: "",
   languages: "",
+  professionalTitle: "",
+  website: "",
+  portfolioLink: "",
   avatarPreview: "",
   avatarFile: null,
 };
@@ -148,6 +169,16 @@ const defaultSecurity: SecuritySettings = {
   newPassword: "",
   confirmPassword: "",
   twoFactorEnabled: false,
+};
+
+const defaultAvailability: AvailabilitySettings = {
+  workingDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+  startTime: "09:00",
+  endTime: "17:00",
+  vacationMode: false,
+  vacationStart: "",
+  vacationEnd: "",
+  autoReply: "",
 };
 
 const defaultAccount: AccountSettings = {
@@ -174,6 +205,9 @@ function cloneProfileForCompare(profile: ProfileSettings) {
     location: profile.location,
     skills: profile.skills,
     languages: profile.languages,
+    professionalTitle: profile.professionalTitle,
+    website: profile.website,
+    portfolioLink: profile.portfolioLink,
     avatarPreview: profile.avatarPreview,
   };
 }
@@ -218,6 +252,9 @@ export function useSettingsState() {
   const [accountSettings, setAccountSettings] =
     useState<AccountSettings>(defaultAccount);
 
+  const [availabilitySettings, setAvailabilitySettings] =
+    useState<AvailabilitySettings>(defaultAvailability);
+
   const [savingBySection, setSavingBySection] = useState<
     Record<SettingsTab, boolean>
   >({
@@ -227,6 +264,7 @@ export function useSettingsState() {
     payment: false,
     privacy: false,
     account: false,
+    availability: false,
     danger: false,
   });
 
@@ -240,6 +278,8 @@ export function useSettingsState() {
     useState(defaultSellerPayment);
   const [initialSecurity, setInitialSecurity] = useState(defaultSecurity);
   const [initialAccount, setInitialAccount] = useState(defaultAccount);
+  const [initialAvailability, setInitialAvailability] =
+    useState(defaultAvailability);
 
   useEffect(() => {
     if (!userId) {
@@ -254,6 +294,9 @@ export function useSettingsState() {
       location: "",
       skills: "",
       languages: "",
+      professionalTitle: "",
+      website: "",
+      portfolioLink: "",
     };
 
     const nextProfile: ProfileSettings = {
@@ -264,6 +307,9 @@ export function useSettingsState() {
       location: profileExtras.location,
       skills: profileExtras.skills,
       languages: profileExtras.languages,
+      professionalTitle: profileExtras.professionalTitle,
+      website: profileExtras.website,
+      portfolioLink: profileExtras.portfolioLink,
       avatarPreview: profile?.avatar ?? "",
       avatarFile: null,
     };
@@ -272,6 +318,7 @@ export function useSettingsState() {
     const nextPrivacy = persisted?.privacy ?? defaultPrivacy;
     const nextBuyerPayment = persisted?.buyerPayment ?? defaultBuyerPayment;
     const nextSellerPayment = persisted?.sellerPayment ?? defaultSellerPayment;
+    const nextAvailability = persisted?.availability ?? defaultAvailability;
     const nextSecurity: SecuritySettings = {
       ...defaultSecurity,
       twoFactorEnabled: persisted?.security?.twoFactorEnabled ?? false,
@@ -290,6 +337,7 @@ export function useSettingsState() {
     setBuyerPayment(nextBuyerPayment);
     setSellerPayment(nextSellerPayment);
     setAccountSettings(nextAccount);
+    setAvailabilitySettings(nextAvailability);
 
     setInitialProfile(nextProfile);
     setInitialSecurity(nextSecurity);
@@ -298,6 +346,7 @@ export function useSettingsState() {
     setInitialBuyerPayment(nextBuyerPayment);
     setInitialSellerPayment(nextSellerPayment);
     setInitialAccount(nextAccount);
+    setInitialAvailability(nextAvailability);
   }, [
     mode,
     profile?.avatar,
@@ -357,6 +406,13 @@ export function useSettingsState() {
     () => JSON.stringify(accountSettings) !== JSON.stringify(initialAccount),
     [accountSettings, initialAccount],
   );
+ 
+  const isAvailabilityDirty = useMemo(
+    () =>
+      JSON.stringify(availabilitySettings) !==
+      JSON.stringify(initialAvailability),
+    [availabilitySettings, initialAvailability],
+  );
 
   const hasUnsavedChanges =
     isProfileDirty ||
@@ -364,7 +420,8 @@ export function useSettingsState() {
     isNotificationsDirty ||
     isPrivacyDirty ||
     isPaymentDirty ||
-    isAccountDirty;
+    isAccountDirty ||
+    isAvailabilityDirty;
 
   useEffect(() => {
     const beforeUnload = (event: BeforeUnloadEvent) => {
@@ -387,6 +444,9 @@ export function useSettingsState() {
         location: profileSettings.location,
         skills: profileSettings.skills,
         languages: profileSettings.languages,
+        professionalTitle: profileSettings.professionalTitle,
+        website: profileSettings.website,
+        portfolioLink: profileSettings.portfolioLink,
       },
       notifications: notificationSettings,
       privacy: privacySettings,
@@ -398,18 +458,23 @@ export function useSettingsState() {
       account: {
         language: accountSettings.language,
       },
+      availability: availabilitySettings,
     };
 
     writePersistedSettings(userId, payload);
   }, [
     accountSettings.language,
+    availabilitySettings,
     buyerPayment,
     notificationSettings,
     privacySettings,
     profileSettings.displayName,
     profileSettings.languages,
     profileSettings.location,
+    profileSettings.professionalTitle,
     profileSettings.skills,
+    profileSettings.website,
+    profileSettings.portfolioLink,
     profileSettings.username,
     securitySettings.twoFactorEnabled,
     sellerPayment,
@@ -447,6 +512,9 @@ export function useSettingsState() {
         role: profile?.role || "buyer",
         avatar: nextAvatar,
         bio: profileSettings.bio.trim(),
+        professional_title: profileSettings.professionalTitle,
+        website: profileSettings.website,
+        portfolio_link: profileSettings.portfolioLink,
       });
 
       if (error) {
@@ -519,6 +587,14 @@ export function useSettingsState() {
     sellerPayment,
     setSectionSaving,
   ]);
+ 
+  const saveAvailability = useCallback(async () => {
+    setSectionSaving("availability", true);
+    setInitialAvailability(availabilitySettings);
+    persistLocalSettings();
+    toast.success("Availability preferences saved.");
+    setSectionSaving("availability", false);
+  }, [availabilitySettings, persistLocalSettings, setSectionSaving]);
 
   const saveAccount = useCallback(async () => {
     setSectionSaving("account", true);
@@ -777,6 +853,8 @@ export function useSettingsState() {
     setSellerPayment,
     accountSettings,
     setAccountSettings,
+    availabilitySettings,
+    setAvailabilitySettings,
 
     dirty: {
       profile: isProfileDirty,
@@ -785,6 +863,7 @@ export function useSettingsState() {
       privacy: isPrivacyDirty,
       payment: isPaymentDirty,
       account: isAccountDirty,
+      availability: isAvailabilityDirty,
       any: hasUnsavedChanges,
     },
 
@@ -798,6 +877,7 @@ export function useSettingsState() {
       savePrivacy,
       savePayment,
       saveAccount,
+      saveAvailability,
       logoutAllDevices,
       removeBlockedUser,
       saveDangerAction,

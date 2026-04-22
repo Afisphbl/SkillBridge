@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   FiAlertTriangle,
   FiBell,
+  FiClock,
   FiCreditCard,
   FiGlobe,
   FiLock,
@@ -38,6 +39,12 @@ export const settingsTabs: Array<{
     label: "Notifications",
     icon: FiBell,
     description: "Email and in-app alerts",
+  },
+  {
+    id: "availability",
+    label: "Availability",
+    icon: FiClock,
+    description: "Working hours and vacation",
   },
   {
     id: "payment",

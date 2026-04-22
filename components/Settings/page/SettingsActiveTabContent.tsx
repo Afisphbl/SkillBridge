@@ -6,6 +6,7 @@ import { SettingsPaymentSection } from "@/components/Settings/page/SettingsPayme
 import { SettingsPrivacySection } from "@/components/Settings/page/SettingsPrivacySection";
 import { SettingsProfileSection } from "@/components/Settings/page/SettingsProfileSection";
 import { SettingsSecuritySection } from "@/components/Settings/page/SettingsSecuritySection";
+import { SettingsAvailabilitySection } from "@/components/Settings/page/SettingsAvailabilitySection";
 
 function useSettingsActiveTabContentData() {
   const { activeTab } = useSettingsPageContext();
@@ -18,6 +19,7 @@ export function SettingsActiveTabContent() {
   if (activeTab === "profile") return <SettingsProfileSection />;
   if (activeTab === "security") return <SettingsSecuritySection />;
   if (activeTab === "notifications") return <SettingsNotificationsSection />;
+  if (activeTab === "availability") return <SettingsAvailabilitySection />;
   if (activeTab === "payment") return <SettingsPaymentSection />;
   if (activeTab === "privacy") return <SettingsPrivacySection />;
   if (activeTab === "account") return <SettingsAccountSection />;

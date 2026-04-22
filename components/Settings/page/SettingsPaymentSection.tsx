@@ -89,8 +89,9 @@ export function SettingsPaymentSection() {
                 className="h-11 w-full rounded-xl border border-(--border-color) bg-(--bg-card) px-3 text-sm text-(--text-primary)"
               >
                 <option value="none">Not configured</option>
-                <option value="bank">Bank account</option>
-                <option value="wallet">Wallet</option>
+                <option value="bank">Bank Transfer</option>
+                <option value="mobile_money">Mobile Money</option>
+                <option value="paypal">PayPal</option>
               </select>
             </div>
             <div className="space-y-1.5">
@@ -107,6 +108,11 @@ export function SettingsPaymentSection() {
                 }
                 placeholder="Account / wallet identifier"
               />
+              {sellerPayment.payoutAccount && (
+                <p className="mt-1 text-xs text-(--text-muted)">
+                  Masked preview: **** {sellerPayment.payoutAccount.slice(-4)}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-semibold text-(--text-muted)">
