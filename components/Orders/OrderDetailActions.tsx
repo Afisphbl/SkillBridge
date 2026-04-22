@@ -30,7 +30,7 @@ export default function OrderDetailActions({
       });
 
       if (!success) {
-        throw new Error(error?.message || "Action failed.");
+        throw new Error("Action failed.");
       }
 
       toast.success(message);
