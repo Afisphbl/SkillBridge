@@ -49,6 +49,24 @@ GET ORDERS WITH FILTERS
 ========================================
 */
 
+/**
+ * @param {object} params
+ * @param {string} [params.status]
+ * @param {string} [params.buyer_id]
+ * @param {string} [params.seller_id]
+ * @param {string} [params.service_id]
+ * @param {string} [params.search]
+ * @param {number} [params.min_price]
+ * @param {number} [params.max_price]
+ * @param {string} [params.created_from]
+ * @param {string} [params.created_to]
+ * @param {string} [params.delivery_from]
+ * @param {string} [params.delivery_to]
+ * @param {string} [params.sort_by]
+ * @param {string} [params.sort_order]
+ * @param {number} [params.page]
+ * @param {number} [params.limit]
+ */
 export const getOrdersWithFilters = async ({
   status,
   buyer_id,
@@ -65,7 +83,7 @@ export const getOrdersWithFilters = async ({
   sort_order = "desc",
   page = 1,
   limit = 10,
-}) => {
+} = {}) => {
   try {
     let query = supabase.from("orders").select("*");
 
