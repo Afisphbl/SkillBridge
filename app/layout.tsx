@@ -16,10 +16,39 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s - SkillBridge",
-    default: "SkillBridge - Freelance Marketplace",
+    template: "%s | SkillBridge",
+    default: "SkillBridge - The Next-Gen Freelance Marketplace",
   },
-  description: "Freelance marketplace authentication platform",
+  description:
+    "SkillBridge is a premium SaaS platform connecting elite freelancers with global clients. Experience real-time collaboration, advanced project tracking, and seamless payments.",
+  keywords: ["freelance", "marketplace", "remote work", "professional services", "saas"],
+  authors: [{ name: "SkillBridge Team" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://skill-bridge-weld-delta.vercel.app/",
+    siteName: "SkillBridge",
+    title: "SkillBridge - Freelance Marketplace",
+    description: "Connect with top talent and manage your projects with ease on SkillBridge.",
+    images: [
+      {
+        url: "https://skill-bridge-weld-delta.vercel.app/SkillBridge.png",
+        width: 1200,
+        height: 630,
+        alt: "SkillBridge Platform",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SkillBridge - Freelance Marketplace",
+    description: "The professional way to hire and work.",
+    images: ["https://skill-bridge-weld-delta.vercel.app/SkillBridge.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

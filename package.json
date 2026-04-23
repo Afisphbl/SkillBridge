@@ -1,6 +1,19 @@
 {
   "name": "skill-bridge",
   "version": "0.1.0",
+  "description": "SkillBridge is a premium SaaS-grade freelance marketplace platform connecting skilled professionals with clients, featuring real-time messaging, advanced analytics, and a robust order management system.",
+  "author": "SkillBridge Team",
+  "keywords": [
+    "freelance",
+    "marketplace",
+    "nextjs",
+    "supabase",
+    "saas",
+    "realtime",
+    "dashboard",
+    "typescript"
+  ],
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev",
